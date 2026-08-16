@@ -1,0 +1,34 @@
+# Dependencies & logs
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# Git & configuration
+.git
+.gitignore
+.dockerignore
+.vscode
+.idea
+
+# Environment files
+.env
+.env.*
+*.env
+
+# Local upload data and scratch files
+uploads/*
+!uploads/.gitkeep
+uploads/_convert_tmp/*
+*.pdf
+*.pptx
+*.ppt
+*.docx
+*.doc
+
+# OS files
+.DS_Store
+Thumbs.db

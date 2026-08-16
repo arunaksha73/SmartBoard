@@ -95,7 +95,23 @@ function detectLibreOffice() {
     return;
   }
 
-  // 2. Try common Windows paths
+  // 2. Linux standard paths (Docker container / Linux servers)
+  const linuxPaths = [
+    '/usr/bin/soffice',
+    '/usr/bin/libreoffice',
+    '/usr/local/bin/soffice',
+    '/opt/libreoffice/program/soffice'
+  ];
+  for (const p of linuxPaths) {
+    if (fs.existsSync(p)) {
+      SOFFICE_PATH = p;
+      libreOfficeAvailable = true;
+      console.log(`[LibreOffice] Found Linux executable: ${SOFFICE_PATH}`);
+      return;
+    }
+  }
+
+  // 3. Try common Windows paths (local Windows development)
   const windowsPaths = [
     'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
     'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',
@@ -104,20 +120,39 @@ function detectLibreOffice() {
     if (fs.existsSync(p)) {
       SOFFICE_PATH = p;
       libreOfficeAvailable = true;
-      console.log(`[LibreOffice] Found at: ${SOFFICE_PATH}`);
+      console.log(`[LibreOffice] Found Windows executable: ${SOFFICE_PATH}`);
       return;
     }
   }
 
-  // 3. Try PATH lookup (Linux/Mac/Windows with soffice on PATH)
+  // 4. Try PATH lookup via which/where
   try {
     const cmd = process.platform === 'win32' ? 'where' : 'which';
     const result = execFileSync(cmd, ['soffice'], { encoding: 'utf8', timeout: 5000 }).trim();
     if (result) {
-      SOFFICE_PATH = result.split('\n')[0].trim(); // first match
-      libreOfficeAvailable = true;
-      console.log(`[LibreOffice] Found on PATH: ${SOFFICE_PATH}`);
-      return;
+      const candidate = result.split(/[\r\n]+/)[0].trim();
+      if (fs.existsSync(candidate)) {
+        SOFFICE_PATH = candidate;
+        libreOfficeAvailable = true;
+        console.log(`[LibreOffice] Found on PATH (soffice): ${SOFFICE_PATH}`);
+        return;
+      }
+    }
+  } catch (_) {
+    // Not found on PATH
+  }
+
+  try {
+    const cmd = process.platform === 'win32' ? 'where' : 'which';
+    const result = execFileSync(cmd, ['libreoffice'], { encoding: 'utf8', timeout: 5000 }).trim();
+    if (result) {
+      const candidate = result.split(/[\r\n]+/)[0].trim();
+      if (fs.existsSync(candidate)) {
+        SOFFICE_PATH = candidate;
+        libreOfficeAvailable = true;
+        console.log(`[LibreOffice] Found on PATH (libreoffice): ${SOFFICE_PATH}`);
+        return;
+      }
     }
   } catch (_) {
     // Not found on PATH
@@ -125,15 +160,20 @@ function detectLibreOffice() {
 
   libreOfficeAvailable = false;
   console.warn(
-    '[LibreOffice] WARNING: LibreOffice (soffice) not found on this machine.\n' +
+    '[LibreOffice] WARNING: LibreOffice (soffice) not found on this system.\n' +
     '  → PDF uploads will work normally.\n' +
     '  → PPT/PPTX/DOC/DOCX uploads will return an error message.\n' +
-    '  → Install LibreOffice or set the LIBREOFFICE_PATH environment variable.\n' +
-    '  → See deployment note at the top of server.js for details.'
+    '  → Docker / Render: ensured automatically via Dockerfile.\n' +
+    '  → Windows: install LibreOffice or set the LIBREOFFICE_PATH environment variable.'
   );
 }
 
 detectLibreOffice();
+
+// ─── PIN validation helper ────────────────────────────────────────────────
+function isValidPin(pin) {
+  return typeof pin === 'string' && /^\d{4}$/.test(pin.trim());
+}
 
 // ─── In-memory presentation room state: PIN → presentation data ────────────
 const rooms = new Map();
@@ -150,7 +190,7 @@ function generatePin() {
 
 // ─── Retrieve active room or restore from disk fallback ────────────────────
 function getOrRestoreRoom(pin) {
-  if (!pin) return null;
+  if (!isValidPin(pin)) return null;
   const pinStr = String(pin).trim();
   let room = rooms.get(pinStr);
   if (room) return room;
@@ -449,12 +489,16 @@ app.get('/api/presentation/:pin', (req, res) => {
   });
 });
 
-// Health check endpoint for platform monitoring
+// Health check endpoint for Render platform monitoring and uptime checks
 app.get('/health', (req, res) => res.json({
+  status: 'ok',
   ok: true,
+  service: 'smartboard-remote',
   activeRooms: rooms.size,
   libreOfficeAvailable,
-  sofficePath: SOFFICE_PATH || null
+  sofficePath: SOFFICE_PATH || null,
+  uptime: Math.floor(process.uptime()),
+  timestamp: new Date().toISOString()
 }));
 
 // ---------------------------------------------------------------------------

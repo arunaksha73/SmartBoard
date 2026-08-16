@@ -8,6 +8,7 @@ pnpm-debug.log*
 # Environment & Secrets
 .env
 .env.*
+!.env.example
 *.env
 *.pem
 *.key
