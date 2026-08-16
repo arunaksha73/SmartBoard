@@ -1,0 +1,19 @@
+{
+  "name": "smartboard-remote",
+  "version": "1.0.0",
+  "description": "Smartboard Remote - PDF Presentation Remote Controller",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "multer": "^2.0.1",
+    "socket.io": "^4.7.5"
+  }
+}

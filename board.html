@@ -1,0 +1,2734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartBoard Remote</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(255, 255, 255, 0.98);
+      --card-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(255, 255, 255, 0.15);
+      --border: #e2e8f0;
+      --border-focus: #4f46e5;
+      --text: #0f172a;
+      --text-dim: #64748b;
+      --accent: #4f46e5;
+      --accent-hover: #4338ca;
+      --amber: #d97706;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #070a12;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      box-sizing: border-box;
+    }
+
+    /* ── Screen 1: PIN Input Overlay ── */
+    .pin-overlay {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      background:
+        /* Subtle Digital Grid */
+        linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        /* Ambient Blue & Purple Glows */
+        radial-gradient(ellipse 900px 500px at 50% 0%, rgba(79, 70, 229, 0.28), transparent 70%),
+        radial-gradient(circle 500px at 85% 85%, rgba(139, 92, 246, 0.12), transparent 60%),
+        radial-gradient(circle 500px at 15% 80%, rgba(56, 189, 248, 0.10), transparent 60%),
+        /* Deep Navy Gradient Base */
+        radial-gradient(1200px 800px at 50% 50%, #0d1527 0%, #070a12 100%);
+      background-size: 36px 36px, 36px 36px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .pin-card {
+      width: 100%;
+      max-width: 480px;
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 32px;
+      padding: 40px 32px 32px;
+      text-align: center;
+      box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.7), 0 0 35px rgba(79, 70, 229, 0.18);
+    }
+
+    .brand-tag {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #818cf8;
+      margin-bottom: 16px;
+    }
+
+    .brand-title {
+      display: inline-flex;
+      align-items: center;
+      letter-spacing: 0.14em;
+    }
+
+    .brand-clock {
+      font-family: 'Space Grotesk', monospace, sans-serif;
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #cbd5e1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      text-transform: uppercase;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 440px) {
+      .brand-tag {
+        font-size: 11.5px;
+        gap: 8px;
+      }
+      .brand-clock {
+        font-size: 11px;
+        padding: 2px 7px;
+      }
+    }
+
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 32px;
+      letter-spacing: -0.02em;
+      color: #f8fafc;
+      margin-bottom: 10px;
+    }
+
+    p.sub {
+      color: #94a3b8;
+      font-size: 15px;
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    .pin-inputs {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .pin-input-box {
+      width: 64px;
+      height: 78px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: #818cf8;
+      text-align: center;
+      outline: none;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .pin-input-box:focus {
+      border-color: #818cf8;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-connect {
+      width: 100%;
+      padding: 18px;
+      border-radius: 18px;
+      border: none;
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: #ffffff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.45);
+    }
+
+    /* ── Virtual Numeric Keypad for Interactive Smartboards ── */
+    .virtual-keypad {
+      margin-top: 20px;
+      margin-bottom: 24px;
+      width: 100%;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+
+    .keypad-btn {
+      height: 56px;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: #f8fafc;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .keypad-btn:hover {
+      background: rgba(99, 102, 241, 0.18);
+      border-color: rgba(129, 140, 248, 0.5);
+      color: #ffffff;
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .keypad-btn:active {
+      transform: scale(0.93);
+      background: rgba(99, 102, 241, 0.35);
+      border-color: #818cf8;
+      box-shadow: 0 0 20px rgba(129, 140, 248, 0.6);
+    }
+
+    .keypad-btn.keypad-action-btn {
+      color: #cbd5e1;
+    }
+
+    .keypad-btn.keypad-backspace {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+    }
+
+    .keypad-btn.keypad-backspace:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #ffffff;
+      box-shadow: 0 0 16px rgba(239, 68, 68, 0.35);
+    }
+
+    .keypad-btn.keypad-backspace:active {
+      background: rgba(239, 68, 68, 0.35);
+      border-color: #ef4444;
+      color: #ffffff;
+    }
+
+    .keypad-btn.keypad-submit {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.3));
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #6ee7b7;
+    }
+
+    .keypad-btn.keypad-submit:hover {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.5));
+      border-color: #10b981;
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.45);
+    }
+
+    .keypad-btn.keypad-submit:active {
+      background: #10b981;
+      border-color: #34d399;
+      color: #ffffff;
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.7);
+    }
+
+    .btn-connect:hover {
+      background: linear-gradient(135deg, #4338ca, #4f46e5);
+      box-shadow: 0 12px 28px -5px rgba(79, 70, 229, 0.6);
+    }
+
+    .error-msg {
+      margin-top: 16px;
+      font-size: 14px;
+      color: #f87171;
+      font-weight: 500;
+      min-height: 20px;
+    }
+
+    /* ── Screen 2: PDF Canvas Display ── */
+    .viewport {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      background:
+        /* Very subtle ambient grid */
+        linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        /* Deep presentation ambient background */
+        radial-gradient(ellipse 1000px 600px at 50% 50%, #0d1527 0%, #060912 100%);
+      background-size: 40px 40px, 40px 40px, 100% 100%;
+    }
+
+    /* Brightness / Night-mode overlay — always pointer-events:none so it never blocks interaction */
+    #brightnessOverlay {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 20;
+      transition: opacity 0.4s ease;
+    }
+
+    /* Canvas zoom wrapper — transform applied here so canvas itself doesn't resize */
+    #canvasWrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-origin: center center;
+    }
+
+    canvas {
+      max-width: 96vw;
+      max-height: 90vh;
+      object-fit: contain;
+      box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      display: block;
+    }
+
+    /* Top status bar */
+    .top-bar {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      z-index: 10;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+      transition: opacity 0.25s ease;
+    }
+
+    .top-bar-divider {
+      width: 1px;
+      height: 18px;
+      background: rgba(255, 255, 255, 0.15);
+      flex-shrink: 0;
+    }
+
+    .live-clock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+
+    .clock-time {
+      color: #f8fafc;
+      font-weight: 700;
+    }
+
+    .clock-dot {
+      color: #64748b;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+    }
+
+    /* ── Board bottom navigation bar ── */
+    .board-nav {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 10;
+      box-shadow: 0 15px 40px -5px rgba(0, 0, 0, 0.6);
+      white-space: nowrap;
+      /* Smooth hide/show animation */
+      transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1),
+                  transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* Controls-hidden state: fade + slide down instead of display:none */
+    .board-nav.controls-hidden {
+      opacity: 0;
+      transform: translateX(-50%) translateY(18px);
+      pointer-events: none;
+    }
+
+    .board-nav-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: #f1f5f9;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .board-nav-btn:hover {
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: #fff;
+      border-color: rgba(99, 102, 241, 0.5);
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+    }
+
+    .board-nav-btn:active {
+      transform: scale(0.92);
+    }
+
+    .slide-counter {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #f8fafc;
+      padding: 0 10px;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .nav-divider {
+      width: 1px;
+      height: 28px;
+      background: rgba(255, 255, 255, 0.12);
+      flex-shrink: 0;
+    }
+
+    .hide-ctrl-btn {
+      padding: 8px 14px;
+      height: 38px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: #94a3b8;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .hide-ctrl-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #f8fafc;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Restore button — small floating pill at bottom-center, shown when controls are hidden */
+    #restoreControlsBtn {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 8px 20px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      z-index: 30;
+      /* Animated show/hide */
+      opacity: 0;
+      transform: translateX(-50%) translateY(10px);
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease, background 0.2s ease;
+    }
+
+    #restoreControlsBtn.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+
+    #restoreControlsBtn:hover {
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    /* ── Settings Modal & Backdrop ── */
+    .settings-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 14, 0.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 150;
+      padding: 20px;
+      animation: fadeInSettings 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeInSettings {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .settings-card {
+      width: 100%;
+      max-width: 480px;
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 28px;
+      padding: 26px 24px;
+      box-shadow: 0 30px 80px -10px rgba(0, 0, 0, 0.8), 0 0 30px rgba(79, 70, 229, 0.2);
+      transform-origin: center center;
+      animation: scaleInSettings 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes scaleInSettings {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .settings-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .settings-close-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 700;
+      transition: all 0.15s ease;
+    }
+
+    .settings-close-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+
+    .settings-body {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .settings-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .settings-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .settings-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #cbd5e1;
+      text-transform: uppercase;
+    }
+
+    .settings-value-badge {
+      font-family: 'Space Grotesk', monospace, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: #818cf8;
+      background: rgba(79, 70, 229, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Day / Night segmented toggle */
+    .theme-toggle-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 5px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .theme-option-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #94a3b8;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .theme-option-btn.active {
+      background: linear-gradient(135deg, rgba(79, 70, 229, 0.85), rgba(99, 102, 241, 0.85));
+      color: #ffffff;
+      border-color: rgba(129, 140, 248, 0.5);
+      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35);
+    }
+
+    .theme-option-btn:not(.active):hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #f1f5f9;
+    }
+
+    /* Slider rows */
+    .slider-control-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 10px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .slider-icon {
+      font-size: 16px;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .custom-range {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.15);
+      outline: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .custom-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #818cf8;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .custom-range::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      background: #6366f1;
+    }
+
+    .custom-range::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #818cf8;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
+      cursor: pointer;
+    }
+
+    /* Zoom quick buttons */
+    .zoom-quick-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: #cbd5e1;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+
+    .zoom-quick-btn:hover {
+      background: rgba(79, 70, 229, 0.3);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #fff;
+    }
+
+    .zoom-reset-pill {
+      padding: 5px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: #94a3b8;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+
+    .zoom-reset-pill:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    /* Fullscreen button in modal */
+    .fullscreen-action-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 13px;
+      border-radius: 14px;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      background: rgba(79, 70, 229, 0.15);
+      color: #f1f5f9;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .fullscreen-action-btn:hover {
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      border-color: rgba(129, 140, 248, 0.6);
+      color: #ffffff;
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+    }
+
+    /* Top-bar settings button */
+    .top-bar-btn {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+    }
+
+    .top-bar-btn:hover {
+      color: #f1f5f9;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .pin-corner-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 105;
+    }
+
+    .pin-corner-btn:hover {
+      background: rgba(79, 70, 229, 0.35);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #ffffff;
+    }
+
+    /* ── Professional Footer ── */
+    .pin-footer {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      user-select: none;
+    }
+
+    .footer-creator {
+      font-size: 13px;
+      font-weight: 500;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.01em;
+    }
+
+    .footer-creator .creator-name {
+      font-weight: 700;
+      color: #f1f5f9;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .footer-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .footer-btn svg {
+      transition: transform 0.2s ease, stroke 0.2s ease;
+      flex-shrink: 0;
+      stroke: #cbd5e1;
+    }
+
+    .footer-btn:hover {
+      color: #ffffff;
+      border-color: rgba(99, 102, 241, 0.5);
+      background: rgba(79, 70, 229, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px -4px rgba(79, 70, 229, 0.35);
+    }
+
+    .footer-btn:hover svg {
+      stroke: #ffffff;
+      transform: scale(1.12);
+    }
+
+    .footer-btn:active {
+      transform: translateY(0) scale(0.96);
+    }
+
+    /* ── Ambient Interactive Doodle Canvas ── */
+    #ambientDoodleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      max-width: 100vw;
+      max-height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    /* ── Comprehensive Mobile Breakpoints for Board ── */
+    @media (max-width: 480px) {
+      .pin-card {
+        padding: 28px 18px 22px;
+        border-radius: 24px;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      .pin-input-box {
+        width: 52px;
+        height: 66px;
+        font-size: 28px;
+        border-radius: 14px;
+      }
+      .pin-inputs {
+        gap: 8px;
+      }
+      .brand-tag {
+        font-size: 11px;
+        gap: 6px;
+      }
+      .brand-clock {
+        font-size: 10.5px;
+        padding: 2px 7px;
+      }
+      .pin-corner-btn {
+        top: 12px;
+        right: 12px;
+        padding: 6px 12px;
+        font-size: 11px;
+      }
+      .board-nav {
+        padding: 8px 10px;
+        gap: 6px;
+        max-width: calc(100vw - 20px);
+        box-sizing: border-box;
+      }
+      .board-nav-btn {
+        width: 38px;
+        height: 38px;
+      }
+      .slide-counter {
+        font-size: 12px;
+        min-width: 65px;
+        padding: 0 4px;
+      }
+      .settings-card {
+        padding: 20px 16px;
+        border-radius: 22px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .pin-input-box {
+        width: 44px;
+        height: 58px;
+        font-size: 24px;
+        border-radius: 10px;
+      }
+      .pin-inputs {
+        gap: 6px;
+      }
+      .btn-connect {
+        padding: 16px;
+        font-size: 16px;
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Interactive Glowing Doodle Particle Canvas -->
+  <canvas id="ambientDoodleCanvas"></canvas>
+
+  <!-- SCREEN 1: PIN PAIRING OVERLAY -->
+  <div class="pin-overlay" id="pinOverlay">
+    <!-- Pin Screen Fullscreen Toggle -->
+    <button id="pinFullscreenBtn" class="pin-corner-btn" title="Toggle Fullscreen">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+      </svg>
+      <span>FULLSCREEN</span>
+    </button>
+    <div class="pin-card">
+      <div class="brand-tag">
+        <span class="brand-title">Smartboard Viewer</span>
+        <span id="pinLiveClock" class="brand-clock">--:--:-- --</span>
+      </div>
+      <h1>Enter Presentation PIN</h1>
+      <p class="sub">Look at the smartphone remote screen for the 4-digit code.</p>
+
+      <div class="pin-inputs" id="pinInputs">
+        <input type="text" maxlength="1" class="pin-input-box" autofocus />
+        <input type="text" maxlength="1" class="pin-input-box" />
+        <input type="text" maxlength="1" class="pin-input-box" />
+        <input type="text" maxlength="1" class="pin-input-box" />
+      </div>
+
+      <!-- On-Screen Virtual Numeric Keypad for Interactive Smartboards -->
+      <div class="virtual-keypad" id="virtualKeypad">
+        <div class="keypad-grid">
+          <button type="button" class="keypad-btn" data-key="1">1</button>
+          <button type="button" class="keypad-btn" data-key="2">2</button>
+          <button type="button" class="keypad-btn" data-key="3">3</button>
+          <button type="button" class="keypad-btn" data-key="4">4</button>
+          <button type="button" class="keypad-btn" data-key="5">5</button>
+          <button type="button" class="keypad-btn" data-key="6">6</button>
+          <button type="button" class="keypad-btn" data-key="7">7</button>
+          <button type="button" class="keypad-btn" data-key="8">8</button>
+          <button type="button" class="keypad-btn" data-key="9">9</button>
+          <button type="button" class="keypad-btn keypad-action-btn keypad-backspace" data-key="backspace" title="Delete" aria-label="Delete last digit">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+              <line x1="18" y1="9" x2="12" y2="15"></line>
+              <line x1="12" y1="9" x2="18" y2="15"></line>
+            </svg>
+          </button>
+          <button type="button" class="keypad-btn" data-key="0">0</button>
+          <button type="button" class="keypad-btn keypad-action-btn keypad-submit" data-key="submit" title="Pair Smartboard" aria-label="Pair Smartboard">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-connect" id="btnConnect">Pair Smartboard</button>
+      <div class="error-msg" id="errorMsg"></div>
+
+      <!-- Professional Footer -->
+      <footer class="pin-footer">
+        <div class="footer-creator">
+          Created by <span class="creator-name">Arunaksha Das</span>
+        </div>
+        <div class="footer-links">
+          <a href="https://www.instagram.com/mr.ad_8974" target="_blank" rel="noopener noreferrer" class="footer-btn" aria-label="Instagram profile of Arunaksha Das">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+            <span>Instagram</span>
+          </a>
+          <a href="https://github.com/arunaksha73" target="_blank" rel="noopener noreferrer" class="footer-btn" aria-label="GitHub profile of Arunaksha Das">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg>
+            <span>GitHub</span>
+          </a>
+          <a href="https://www.linkedin.com/in/arunaksha-das" target="_blank" rel="noopener noreferrer" class="footer-btn" aria-label="LinkedIn profile of Arunaksha Das">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+              <rect x="2" y="9" width="4" height="12"></rect>
+              <circle cx="4" cy="4" r="2"></circle>
+            </svg>
+            <span>LinkedIn</span>
+          </a>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: PDF CANVAS VIEWER -->
+  <div class="viewport">
+
+    <!-- Brightness / Night-mode overlay (pointer-events: none — never blocks PDF) -->
+    <div id="brightnessOverlay"></div>
+
+    <!-- Top status bar with live clock and date -->
+    <div class="top-bar hidden" id="topBar">
+      <span class="status-dot"></span>
+      <span>PIN: <strong id="displayPin" style="color: var(--amber);">----</strong></span>
+      <span>Slide <strong id="slideNum" style="color: var(--text);">1</strong> / <span id="pageCount">1</span></span>
+      <div class="top-bar-divider"></div>
+      <div class="live-clock-badge">
+        <span id="liveDateDisplay">--</span>
+        <span class="clock-dot">•</span>
+        <span id="liveTimeDisplay" class="clock-time">--:-- --</span>
+      </div>
+      <div class="top-bar-divider"></div>
+      <button class="top-bar-btn" id="topBarSettingsBtn" title="Display Settings (S)">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Canvas wrapped for CSS zoom (transform-origin: center) -->
+    <div id="canvasWrapper">
+      <canvas id="pdfCanvas"></canvas>
+    </div>
+
+    <!-- Board bottom navigation bar -->
+    <div class="board-nav hidden" id="boardNav">
+      <button class="board-nav-btn" id="boardBtnPrev" title="Previous Slide">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <span class="slide-counter" id="boardSlideCounter">Slide 1 / 1</span>
+      <button class="board-nav-btn" id="boardBtnNext" title="Next Slide">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+      <div class="nav-divider"></div>
+      <button class="board-nav-btn" id="boardBtnSettings" title="Display Settings (S)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+      <button class="board-nav-btn" id="boardBtnFullscreen" title="Toggle Fullscreen (F)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
+      <div class="nav-divider"></div>
+      <button class="hide-ctrl-btn" id="hideControlsBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+        HIDE
+      </button>
+    </div>
+
+    <!-- Restore controls — shown only when board nav and top bar are hidden -->
+    <button id="restoreControlsBtn" class="hidden">▲ SHOW CONTROLS</button>
+  </div>
+
+  <!-- SETTINGS MODAL DIALOG -->
+  <div class="settings-backdrop hidden" id="settingsModal">
+    <div class="settings-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="settings-header">
+        <div class="settings-title" id="settingsTitle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          Display Settings
+        </div>
+        <button class="settings-close-btn" id="settingsCloseBtn" aria-label="Close settings">✕</button>
+      </div>
+
+      <div class="settings-body">
+        <!-- THEME SELECTION: DAY / NIGHT -->
+        <div class="settings-group">
+          <label class="settings-label">
+            <span>🎨 Display Theme</span>
+          </label>
+          <div class="theme-toggle-row">
+            <button class="theme-option-btn active" id="modalDayBtn">
+              <span class="theme-icon">☀️</span>
+              <span>Day Mode</span>
+            </button>
+            <button class="theme-option-btn" id="modalNightBtn">
+              <span class="theme-icon">🌙</span>
+              <span>Dark / Night</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- BRIGHTNESS SLIDER: 20% - 100% -->
+        <div class="settings-group">
+          <div class="settings-label-row">
+            <label class="settings-label" for="modalBrightnessSlider">
+              <span>🔆 Brightness</span>
+            </label>
+            <span class="settings-value-badge" id="modalBrightnessVal">100%</span>
+          </div>
+          <div class="slider-control-row">
+            <span class="slider-icon">🌑</span>
+            <input type="range" id="modalBrightnessSlider" class="custom-range" min="20" max="100" value="100" step="1" />
+            <span class="slider-icon">☀️</span>
+          </div>
+        </div>
+
+        <!-- ZOOM SLIDER & BUTTONS: 50% - 200% -->
+        <div class="settings-group">
+          <div class="settings-label-row">
+            <label class="settings-label" for="modalZoomSlider">
+              <span>🔍 Canvas Zoom</span>
+            </label>
+            <span class="settings-value-badge" id="modalZoomVal">100%</span>
+          </div>
+          <div class="slider-control-row">
+            <button class="zoom-quick-btn" id="modalZoomOutBtn" title="Zoom Out (-10%)">−</button>
+            <input type="range" id="modalZoomSlider" class="custom-range" min="50" max="200" value="100" step="5" />
+            <button class="zoom-quick-btn" id="modalZoomInBtn" title="Zoom In (+10%)">+</button>
+            <button class="zoom-reset-pill" id="modalZoomResetBtn" title="Reset Zoom">Reset</button>
+          </div>
+        </div>
+
+        <!-- FULLSCREEN PRESENTATION -->
+        <div class="settings-group">
+          <label class="settings-label">
+            <span>🖥️ Screen Display</span>
+          </label>
+          <button class="fullscreen-action-btn" id="modalFullscreenBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+            </svg>
+            <span id="modalFullscreenLabel">Enter Fullscreen Presentation</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Set PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // Explicit backend URL configuration
+    const SERVER_URL = window.location.origin;
+
+    // ── DOM references ──
+    const pinOverlay          = document.getElementById('pinOverlay');
+    const pinInputs           = Array.from(document.querySelectorAll('.pin-input-box'));
+    const btnConnect          = document.getElementById('btnConnect');
+    const errorMsg            = document.getElementById('errorMsg');
+    const topBar              = document.getElementById('topBar');
+    const displayPin          = document.getElementById('displayPin');
+    const slideNum            = document.getElementById('slideNum');
+    const pageCount           = document.getElementById('pageCount');
+    const canvas              = document.getElementById('pdfCanvas');
+    const ctx                 = canvas.getContext('2d');
+    const canvasWrapper       = document.getElementById('canvasWrapper');
+    const brightnessOverlay   = document.getElementById('brightnessOverlay');
+    const boardNav            = document.getElementById('boardNav');
+    const boardSlideCounter   = document.getElementById('boardSlideCounter');
+    const boardBtnPrev        = document.getElementById('boardBtnPrev');
+    const boardBtnNext        = document.getElementById('boardBtnNext');
+    const hideControlsBtn     = document.getElementById('hideControlsBtn');
+    const restoreControlsBtn  = document.getElementById('restoreControlsBtn');
+
+    // Settings & Display DOM elements
+    const settingsModal         = document.getElementById('settingsModal');
+    const settingsCloseBtn      = document.getElementById('settingsCloseBtn');
+    const boardBtnSettings      = document.getElementById('boardBtnSettings');
+    const topBarSettingsBtn     = document.getElementById('topBarSettingsBtn');
+    const boardBtnFullscreen    = document.getElementById('boardBtnFullscreen');
+    const pinFullscreenBtn      = document.getElementById('pinFullscreenBtn');
+    const modalDayBtn           = document.getElementById('modalDayBtn');
+    const modalNightBtn         = document.getElementById('modalNightBtn');
+    const modalBrightnessSlider = document.getElementById('modalBrightnessSlider');
+    const modalBrightnessVal    = document.getElementById('modalBrightnessVal');
+    const modalZoomSlider       = document.getElementById('modalZoomSlider');
+    const modalZoomVal          = document.getElementById('modalZoomVal');
+    const modalZoomOutBtn       = document.getElementById('modalZoomOutBtn');
+    const modalZoomInBtn        = document.getElementById('modalZoomInBtn');
+    const modalZoomResetBtn     = document.getElementById('modalZoomResetBtn');
+    const modalFullscreenBtn    = document.getElementById('modalFullscreenBtn');
+    const modalFullscreenLabel  = document.getElementById('modalFullscreenLabel');
+
+    // ── State ──
+    let pdfDoc          = null;
+    let pageNum         = 1;
+    let pageRendering   = false;
+    let pageNumPending  = null;
+    let socket          = null;
+    let activePin       = null;
+    let zoomLevel       = 1.0;
+    let brightnessLevel = 100;   // 20–100
+    let isNightMode     = false;
+    let controlsVisible = true;
+
+    // ── PIN Input auto-tabbing ──
+    pinInputs.forEach((input, index) => {
+      input.addEventListener('input', (e) => {
+        if (e.target.value && index < pinInputs.length - 1) {
+          pinInputs[index + 1].focus();
+        }
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && index > 0) {
+          pinInputs[index - 1].focus();
+        }
+        if (e.key === 'Enter') submitPin();
+      });
+    });
+
+    // ── On-Screen Virtual Numeric Keypad for Interactive Smartboards ──
+    const virtualKeypad = document.getElementById('virtualKeypad');
+    if (virtualKeypad) {
+      virtualKeypad.addEventListener('click', (e) => {
+        const btn = e.target.closest('.keypad-btn');
+        if (!btn) return;
+        const key = btn.dataset.key;
+        handleKeypadInput(key);
+      });
+    }
+
+    function handleKeypadInput(key) {
+      if (key >= '0' && key <= '9') {
+        if (navigator.vibrate) navigator.vibrate(30);
+        const activeElem = document.activeElement;
+        const activeIdx = pinInputs.indexOf(activeElem);
+
+        if (activeIdx !== -1 && activeIdx < pinInputs.length) {
+          pinInputs[activeIdx].value = key;
+          if (activeIdx < pinInputs.length - 1) {
+            pinInputs[activeIdx + 1].focus();
+          }
+        } else {
+          // Fill first empty slot
+          const emptyIdx = pinInputs.findIndex(inp => !inp.value);
+          if (emptyIdx !== -1) {
+            pinInputs[emptyIdx].value = key;
+            if (emptyIdx < pinInputs.length - 1) {
+              pinInputs[emptyIdx + 1].focus();
+            } else {
+              pinInputs[emptyIdx].focus();
+            }
+          } else {
+            // Replace last slot if all 4 are full
+            pinInputs[pinInputs.length - 1].value = key;
+            pinInputs[pinInputs.length - 1].focus();
+          }
+        }
+      } else if (key === 'backspace') {
+        if (navigator.vibrate) navigator.vibrate(25);
+        const activeElem = document.activeElement;
+        const activeIdx = pinInputs.indexOf(activeElem);
+
+        if (activeIdx !== -1) {
+          if (pinInputs[activeIdx].value) {
+            pinInputs[activeIdx].value = '';
+          } else if (activeIdx > 0) {
+            pinInputs[activeIdx - 1].value = '';
+            pinInputs[activeIdx - 1].focus();
+          }
+        } else {
+          // Clear last non-empty box
+          for (let i = pinInputs.length - 1; i >= 0; i--) {
+            if (pinInputs[i].value) {
+              pinInputs[i].value = '';
+              pinInputs[i].focus();
+              break;
+            }
+          }
+        }
+      } else if (key === 'submit') {
+        if (navigator.vibrate) navigator.vibrate(45);
+        submitPin();
+      }
+    }
+
+    btnConnect.addEventListener('click', submitPin);
+
+    function getEnteredPin() {
+      return pinInputs.map(input => input.value).join('');
+    }
+
+    async function submitPin() {
+      const pin = getEnteredPin();
+      if (pin.length !== 4) { showError('Please enter a 4-digit PIN.'); return; }
+
+      showError('');
+      btnConnect.textContent = 'Connecting...';
+
+      try {
+        const response = await fetch(`${SERVER_URL}/api/presentation/${pin}`);
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || 'PIN not found.');
+        }
+
+        const data = await response.json();
+        if (data.ok && data.pdfUrl) {
+          activePin = pin;
+          try {
+            localStorage.setItem('smartboard_board_pin', pin);
+          } catch (_) {}
+          displayPin.textContent = pin;
+          pinOverlay.classList.add('hidden');
+          topBar.classList.remove('hidden');
+          boardNav.classList.remove('hidden');
+          controlsVisible = true;
+
+          initSocketConnection(pin);
+          loadPdfDocument(`${SERVER_URL}${data.pdfUrl}`, data.currentPage || 1);
+        } else {
+          throw new Error('Invalid presentation payload.');
+        }
+      } catch (err) {
+        console.error('Connection Error:', err);
+        showError(err.message);
+        btnConnect.textContent = 'Pair Smartboard';
+      }
+    }
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+    }
+
+    // ── Display helpers ──
+    function applyZoom() {
+      canvasWrapper.style.transform = `scale(${zoomLevel})`;
+      updateSettingsModalUI();
+    }
+
+    function applyBrightness() {
+      let opacity;
+      if (isNightMode) {
+        opacity = 0.62;
+      } else {
+        // Map brightness 100→0 dim, 20→0.8 dim
+        opacity = (100 - brightnessLevel) / 100 * 0.8;
+      }
+      brightnessOverlay.style.opacity = String(Math.max(0, Math.min(0.85, opacity)));
+      updateSettingsModalUI();
+    }
+
+    function updateSlideCounter() {
+      const total = pdfDoc ? pdfDoc.numPages : 1;
+      boardSlideCounter.textContent = `Slide ${pageNum} / ${total}`;
+      slideNum.textContent = pageNum;
+    }
+
+    // ── Settings Modal Controls ──
+    function openSettings() {
+      updateSettingsModalUI();
+      if (settingsModal) settingsModal.classList.remove('hidden');
+    }
+
+    function closeSettings() {
+      if (settingsModal) settingsModal.classList.add('hidden');
+    }
+
+    function toggleSettings() {
+      if (settingsModal) {
+        if (settingsModal.classList.contains('hidden')) {
+          openSettings();
+        } else {
+          closeSettings();
+        }
+      }
+    }
+
+    function updateSettingsModalUI() {
+      if (modalBrightnessSlider) modalBrightnessSlider.value = brightnessLevel;
+      if (modalBrightnessVal) modalBrightnessVal.textContent = `${brightnessLevel}%`;
+
+      const zoomPercent = Math.round(zoomLevel * 100);
+      if (modalZoomSlider) modalZoomSlider.value = zoomPercent;
+      if (modalZoomVal) modalZoomVal.textContent = `${zoomPercent}%`;
+
+      if (modalDayBtn && modalNightBtn) {
+        if (isNightMode) {
+          modalNightBtn.classList.add('active');
+          modalDayBtn.classList.remove('active');
+        } else {
+          modalDayBtn.classList.add('active');
+          modalNightBtn.classList.remove('active');
+        }
+      }
+
+      updateFullscreenUI();
+    }
+
+    function updateFullscreenUI() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (modalFullscreenLabel) {
+        modalFullscreenLabel.textContent = isFs ? 'Exit Fullscreen' : 'Enter Fullscreen Presentation';
+      }
+      if (pinFullscreenBtn) {
+        const textSpan = pinFullscreenBtn.querySelector('span');
+        if (textSpan) textSpan.textContent = isFs ? 'EXIT FULLSCREEN' : 'FULLSCREEN';
+      }
+    }
+
+    function toggleFullscreen() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (!isFs) {
+        const docEl = document.documentElement;
+        if (docEl.requestFullscreen) {
+          docEl.requestFullscreen().catch(err => console.warn('Fullscreen denied:', err));
+        } else if (docEl.webkitRequestFullscreen) {
+          docEl.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(err => console.warn('Exit fullscreen error:', err));
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    }
+
+    document.addEventListener('fullscreenchange', updateFullscreenUI);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+
+    // Settings actions
+    function setDayMode(syncSocket = true) {
+      isNightMode = false;
+      brightnessLevel = 100;
+      applyBrightness();
+      if (syncSocket && socket && activePin) {
+        socket.emit('theme-command', { pin: activePin, theme: 'day' });
+      }
+    }
+
+    function setNightMode(syncSocket = true) {
+      isNightMode = true;
+      applyBrightness();
+      if (syncSocket && socket && activePin) {
+        socket.emit('theme-command', { pin: activePin, theme: 'night' });
+      }
+    }
+
+    function setBrightness(val, syncSocket = true) {
+      brightnessLevel = Math.max(20, Math.min(100, parseInt(val, 10) || 100));
+      isNightMode = false;
+      applyBrightness();
+      if (syncSocket && socket && activePin) {
+        socket.emit('brightness-command', { pin: activePin, brightness: brightnessLevel });
+      }
+    }
+
+    function setZoom(val, syncSocket = true) {
+      zoomLevel = Math.max(0.5, Math.min(2.0, parseFloat(Number(val).toFixed(2)) || 1.0));
+      applyZoom();
+      if (syncSocket && socket && activePin) {
+        socket.emit('zoom-command', { pin: activePin, action: 'custom', zoom: zoomLevel });
+      }
+    }
+
+    // Bind settings events
+    if (boardBtnSettings) boardBtnSettings.addEventListener('click', toggleSettings);
+    if (topBarSettingsBtn) topBarSettingsBtn.addEventListener('click', toggleSettings);
+    if (settingsCloseBtn) settingsCloseBtn.addEventListener('click', closeSettings);
+    if (settingsModal) {
+      settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) closeSettings();
+      });
+    }
+
+    if (boardBtnFullscreen) boardBtnFullscreen.addEventListener('click', toggleFullscreen);
+    if (pinFullscreenBtn) pinFullscreenBtn.addEventListener('click', toggleFullscreen);
+    if (modalFullscreenBtn) modalFullscreenBtn.addEventListener('click', toggleFullscreen);
+
+    if (modalDayBtn) modalDayBtn.addEventListener('click', () => setDayMode(true));
+    if (modalNightBtn) modalNightBtn.addEventListener('click', () => setNightMode(true));
+    if (modalBrightnessSlider) modalBrightnessSlider.addEventListener('input', (e) => setBrightness(e.target.value, true));
+    if (modalZoomSlider) modalZoomSlider.addEventListener('input', (e) => setZoom(e.target.value / 100, true));
+    if (modalZoomOutBtn) modalZoomOutBtn.addEventListener('click', () => setZoom(zoomLevel - 0.1, true));
+    if (modalZoomInBtn) modalZoomInBtn.addEventListener('click', () => setZoom(zoomLevel + 0.1, true));
+    if (modalZoomResetBtn) modalZoomResetBtn.addEventListener('click', () => setZoom(1.0, true));
+
+    // ── Hide / restore controls ──
+    function setControlsVisible(visible, emitEvent = true) {
+      controlsVisible = visible;
+      if (visible) {
+        topBar.classList.remove('hidden');
+        boardNav.classList.remove('controls-hidden');
+        restoreControlsBtn.classList.remove('visible');
+      } else {
+        topBar.classList.add('hidden');
+        boardNav.classList.add('controls-hidden');
+        restoreControlsBtn.classList.add('visible');
+        closeSettings();
+      }
+      // Emit to room so phone remote stays in sync
+      if (emitEvent && socket && activePin) {
+        socket.emit('presentation-controls', { pin: activePin, visible });
+      }
+    }
+
+    hideControlsBtn.addEventListener('click', () => setControlsVisible(false));
+    restoreControlsBtn.addEventListener('click', () => setControlsVisible(true));
+
+    // ── Board-local slide navigation ──
+    // Renders immediately (no socket round-trip needed), then syncs server via GOTO.
+    function boardGoPrev() {
+      if (!pdfDoc || pageNum <= 1) return;
+      const newPage = pageNum - 1;
+      queueRenderPage(newPage);
+      if (socket && activePin) {
+        socket.emit('slide-command', { pin: activePin, action: 'GOTO', page: newPage });
+      }
+    }
+
+    function boardGoNext() {
+      if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+      const newPage = pageNum + 1;
+      queueRenderPage(newPage);
+      if (socket && activePin) {
+        socket.emit('slide-command', { pin: activePin, action: 'GOTO', page: newPage });
+      }
+    }
+
+    boardBtnPrev.addEventListener('click', boardGoPrev);
+    boardBtnNext.addEventListener('click', boardGoNext);
+
+    // Keyboard shortcuts for board navigation, settings, and fullscreen
+    document.addEventListener('keydown', (e) => {
+      // If typing in PIN input or slider, let standard keys work
+      if (e.target.tagName === 'INPUT') {
+        if (e.key === 'Escape' && settingsModal && !settingsModal.classList.contains('hidden')) {
+          closeSettings();
+        }
+        return;
+      }
+
+      if (e.key === 'Escape' && settingsModal && !settingsModal.classList.contains('hidden')) {
+        closeSettings();
+        return;
+      }
+
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        toggleSettings();
+        return;
+      }
+
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+        return;
+      }
+
+      if (!pdfDoc || !activePin) return;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+        e.preventDefault();
+        boardGoNext();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        boardGoPrev();
+      }
+    });
+
+    // ── Exit presentation: reset board to PIN entry state ──
+    function exitPresentation(leavingPin) {
+      try {
+        localStorage.removeItem('smartboard_board_pin');
+      } catch (_) {}
+      pdfDoc = null;
+      pageNum = 1;
+      pageRendering = false;
+      pageNumPending = null;
+      zoomLevel = 1.0;
+      brightnessLevel = 100;
+      isNightMode = false;
+
+      // Reset overlays and transforms
+      brightnessOverlay.style.opacity = '0';
+      canvasWrapper.style.transform = 'scale(1)';
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.width = 300;
+      canvas.height = 0;
+
+      // Reset all UI labels
+      displayPin.textContent = '----';
+      slideNum.textContent = '1';
+      pageCount.textContent = '1';
+      boardSlideCounter.textContent = 'Slide 1 / 1';
+
+      // Hide presentation UI
+      topBar.classList.add('hidden');
+      boardNav.classList.add('hidden');
+      restoreControlsBtn.classList.add('hidden');
+      controlsVisible = true;
+
+      // Clear PIN fields and show overlay
+      pinInputs.forEach(inp => { inp.value = ''; });
+      btnConnect.textContent = 'Pair Smartboard';
+      showError('');
+      pinOverlay.classList.remove('hidden');
+      setTimeout(() => pinInputs[0].focus(), 100);
+
+      // Leave the socket room so commands from old session don't leak
+      if (socket && leavingPin) {
+        socket.emit('leave-room', { pin: leavingPin });
+      }
+      activePin = null;
+    }
+
+    // ── Socket.IO ──
+    function initSocketConnection(pin) {
+      if (!socket) {
+        socket = io(SERVER_URL, {
+          reconnection: true,
+          reconnectionAttempts: Infinity,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          timeout: 20000,
+          transports: ['polling', 'websocket']
+        });
+
+        socket.on('connect', () => {
+          if (activePin) {
+            socket.emit('join-room', { pin: activePin, role: 'board' });
+          }
+        });
+
+        // Slide navigation — authoritative page number from server
+        socket.on('slide-command', (data) => {
+          if (data.page !== undefined) {
+            queueRenderPage(data.page);
+          }
+        });
+
+        // Brightness control
+        socket.on('brightness-command', (data) => {
+          if (data.brightness !== undefined) {
+            brightnessLevel = data.brightness;
+            isNightMode = false;
+            applyBrightness();
+          }
+        });
+
+        // Day / Night mode
+        socket.on('theme-command', (data) => {
+          if (data.theme === 'night') {
+            isNightMode = true;
+          } else if (data.theme === 'day') {
+            isNightMode = false;
+            brightnessLevel = 100;
+          }
+          applyBrightness();
+        });
+
+        // Zoom control
+        socket.on('zoom-command', (data) => {
+          if (data.action === 'in') {
+            zoomLevel = Math.min(2.0, parseFloat((zoomLevel + 0.15).toFixed(2)));
+          } else if (data.action === 'out') {
+            zoomLevel = Math.max(0.5, parseFloat((zoomLevel - 0.15).toFixed(2)));
+          } else if (data.action === 'reset') {
+            zoomLevel = 1.0;
+          }
+          applyZoom();
+        });
+
+        // Exit presentation
+        socket.on('exit-presentation', () => {
+          exitPresentation(activePin);
+        });
+
+        // Remote phone toggled presentation controls visibility
+        socket.on('presentation-controls', (data) => {
+          if (data && typeof data.visible === 'boolean') {
+            // false = emitEvent to avoid echo loop
+            setControlsVisible(data.visible, false);
+          }
+        });
+      }
+
+      socket.emit('join-room', { pin, role: 'board' });
+      socket.emit('board-join', { pin });
+    }
+
+    // ── PDF loading ──
+    async function loadPdfDocument(url, initialPage = 1) {
+      try {
+        pdfDoc = await pdfjsLib.getDocument(url).promise;
+        pageCount.textContent = pdfDoc.numPages;
+
+        if (socket && activePin) {
+          socket.emit('pdf-loaded', { pin: activePin, totalPages: pdfDoc.numPages });
+        }
+
+        renderPage(initialPage || 1);
+      } catch (err) {
+        console.error('PDF Load Error:', err);
+        showError('Could not load PDF document.');
+        pinOverlay.classList.remove('hidden');
+      }
+    }
+
+    // ── Auto-Restore Board Session on Page Load ──
+    const STORAGE_KEY_BOARD_PIN = 'smartboard_board_pin';
+
+    async function restoreBoardSessionOnLoad() {
+      try {
+        const savedPin = localStorage.getItem(STORAGE_KEY_BOARD_PIN);
+        if (!savedPin || savedPin.length !== 4) return;
+
+        const response = await fetch(`${SERVER_URL}/api/presentation/${savedPin}`);
+        if (!response.ok) {
+          localStorage.removeItem(STORAGE_KEY_BOARD_PIN);
+          return;
+        }
+
+        const data = await response.json();
+        if (data.ok && data.pdfUrl) {
+          activePin = savedPin;
+          displayPin.textContent = savedPin;
+          pinOverlay.classList.add('hidden');
+          topBar.classList.remove('hidden');
+          boardNav.classList.remove('hidden');
+          controlsVisible = true;
+
+          initSocketConnection(savedPin);
+          loadPdfDocument(`${SERVER_URL}${data.pdfUrl}`, data.currentPage || 1);
+        } else {
+          localStorage.removeItem(STORAGE_KEY_BOARD_PIN);
+        }
+      } catch (err) {
+        console.warn('[Board] Could not auto-restore session:', err);
+      }
+    }
+
+    restoreBoardSessionOnLoad();
+
+    // ── PDF rendering ──
+    function renderPage(num) {
+      pageRendering = true;
+      pageNum = num;
+      updateSlideCounter();
+
+      pdfDoc.getPage(num).then(page => {
+        const viewport = page.getViewport({ scale: 2.0 });
+        canvas.height = viewport.height;
+        canvas.width  = viewport.width;
+
+        const renderTask = page.render({ canvasContext: ctx, viewport });
+        renderTask.promise.then(() => {
+          pageRendering = false;
+          if (pageNumPending !== null) {
+            renderPage(pageNumPending);
+            pageNumPending = null;
+          }
+        });
+      });
+    }
+
+    function queueRenderPage(num) {
+      if (num < 1 || (pdfDoc && num > pdfDoc.numPages)) return;
+      if (pageRendering) {
+        pageNumPending = num;
+      } else {
+        renderPage(num);
+      }
+    }
+
+    // ── Live Clock & Date ──
+    function updateLiveClock() {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      
+      let hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      const timeStr = `${hours}:${minutes}:${seconds} ${ampm}`;
+
+      const dateEl = document.getElementById('liveDateDisplay');
+      const timeEl = document.getElementById('liveTimeDisplay');
+      const pinClockEl = document.getElementById('pinLiveClock');
+
+      if (dateEl) dateEl.textContent = dateStr;
+      if (timeEl) timeEl.textContent = timeStr;
+      if (pinClockEl) pinClockEl.textContent = timeStr;
+    }
+
+    updateLiveClock();
+    setInterval(updateLiveClock, 1000);
+
+    // ── Interactive Continuous Floating Educational Digital Doodle Wallpaper Engine ──
+    (function initAmbientDoodleBackground() {
+      const canvas = document.getElementById('ambientDoodleCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      let width = 0;
+      let height = 0;
+      let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      const mouse = { x: -1000, y: -1000, active: false, radius: 150 };
+      const ripples = [];
+      const burstParticles = [];
+      const ambientDust = [];
+      const doodles = [];
+
+      // 26 comprehensive education + presentation themed doodle types
+      const educationalShapes = [
+        'pencil', 'pen', 'notebook', 'open-book', 'closed-book',
+        'ruler', 'calculator', 'paper-sheet', 'sticky-note', 'paperclip',
+        'lightbulb', 'grad-cap', 'school-bag', 'magnifying-glass', 'globe',
+        'flask', 'presentation-chart', 'math-sigma', 'math-pi', 'math-sqrt',
+        'check-mark', 'small-arrow', 'sparkle', 'diamond', 'circle-cross', 'geometric-hex'
+      ];
+
+      // Curated glowing education palette (cyan, blue, indigo, violet, lavender, aqua)
+      const palette = [
+        { r: 99, g: 102, b: 241 },  // Indigo
+        { r: 129, g: 140, b: 248 }, // Neon Electric Blue
+        { r: 56, g: 189, b: 248 },  // Sky Cyan Glow
+        { r: 168, g: 85, b: 247 },  // Cyber Violet / Purple
+        { r: 192, g: 132, b: 252 }, // Soft Lavender
+        { r: 45, g: 212, b: 191 }   // Emerald / Aqua Teal
+      ];
+
+      function getEdgeSpawnCoordinate() {
+        const region = Math.floor(Math.random() * 4);
+        let x, y;
+        if (region === 0) { // Top-left
+          x = Math.random() * (width * 0.38);
+          y = Math.random() * (height * 0.42);
+        } else if (region === 1) { // Top-right
+          x = width * 0.62 + Math.random() * (width * 0.38);
+          y = Math.random() * (height * 0.42);
+        } else if (region === 2) { // Bottom-left
+          x = Math.random() * (width * 0.38);
+          y = height * 0.58 + Math.random() * (height * 0.42);
+        } else { // Bottom-right
+          x = width * 0.62 + Math.random() * (width * 0.38);
+          y = height * 0.58 + Math.random() * (height * 0.42);
+        }
+        return { x, y };
+      }
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+        initDoodles();
+        initDust();
+      }
+
+      // Background ambient dust particles
+      class AmbientParticle {
+        constructor() {
+          this.reset(true);
+        }
+
+        reset(random = false) {
+          const coord = random ? getEdgeSpawnCoordinate() : { x: Math.random() * width, y: height + 20 };
+          this.x = coord.x;
+          this.y = coord.y;
+          this.size = Math.random() * 2 + 1;
+          this.color = palette[Math.floor(Math.random() * palette.length)];
+          this.alpha = Math.random() * 0.25 + 0.1;
+          this.vy = -(Math.random() * 0.35 + 0.15);
+          this.vx = (Math.random() - 0.5) * 0.2;
+          this.phase = Math.random() * Math.PI * 2;
+        }
+
+        update() {
+          this.phase += 0.02;
+          this.y += this.vy;
+          this.x += this.vx + Math.sin(this.phase) * 0.2;
+          if (this.y < -20 || this.x < -20 || this.x > width + 20) this.reset(false);
+        }
+
+        draw(ctx) {
+          const { r, g, b } = this.color;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+          ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+          ctx.shadowBlur = 6;
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      class EducationalDoodle {
+        constructor(layer, randomPos = true) {
+          this.layer = layer; // 0 = bg (faint, small, slow), 1 = mid, 2 = fg (slightly larger, glowing)
+          this.reset(randomPos);
+        }
+
+        reset(randomPos = false) {
+          if (randomPos) {
+            const coord = getEdgeSpawnCoordinate();
+            this.x = coord.x;
+            this.y = coord.y;
+          } else {
+            this.x = Math.random() < 0.5 ? -35 : width + 35;
+            this.y = Math.random() * height;
+          }
+
+          let speedMult = 1;
+          if (this.layer === 0) { // Distant background layer
+            this.size = Math.random() * 4 + 9;
+            this.baseAlpha = Math.random() * 0.06 + 0.06;
+            speedMult = 0.35;
+          } else if (this.layer === 1) { // Midground layer
+            this.size = Math.random() * 6 + 13;
+            this.baseAlpha = Math.random() * 0.09 + 0.11;
+            speedMult = 0.6;
+          } else { // Foreground glowing layer
+            this.size = Math.random() * 6 + 17;
+            this.baseAlpha = Math.random() * 0.12 + 0.18;
+            speedMult = 0.9;
+          }
+
+          // Upward & lateral gentle drift
+          const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.1;
+          const baseSpeed = (Math.random() * 0.45 + 0.25) * speedMult;
+          this.vx = Math.cos(angle) * baseSpeed;
+          this.vy = Math.sin(angle) * baseSpeed;
+
+          // Wave floating
+          this.waveAmp = (Math.random() * 0.5 + 0.2) * speedMult;
+          this.waveFreq = Math.random() * 0.018 + 0.008;
+          this.wavePhase = Math.random() * Math.PI * 2;
+
+          // Slow rotation
+          this.angle = Math.random() * Math.PI * 2;
+          this.rotSpeed = (Math.random() - 0.5) * 0.015 * speedMult;
+
+          // Educational Shape & Palette
+          this.shape = educationalShapes[Math.floor(Math.random() * educationalShapes.length)];
+          this.color = palette[Math.floor(Math.random() * palette.length)];
+
+          // Breathing scale modulation
+          this.scaleMod = 1;
+          this.scaleSpeed = Math.random() * 0.015 + 0.008;
+          this.scalePhase = Math.random() * Math.PI * 2;
+
+          // Interaction springs
+          this.ox = 0;
+          this.oy = 0;
+          this.ovx = 0;
+          this.ovy = 0;
+          this.glowBonus = 0;
+        }
+
+        update() {
+          // 1. Continuous drift & gentle wave floating
+          this.wavePhase += this.waveFreq;
+          const waveOffset = Math.sin(this.wavePhase) * this.waveAmp;
+          this.x += this.vx + waveOffset * 0.35;
+          this.y += this.vy;
+
+          // Gentle rotation
+          this.angle += this.rotSpeed;
+
+          // Subtle breathing size
+          this.scaleMod = 1 + Math.sin(this.wavePhase * 1.2 + this.scalePhase) * 0.12;
+
+          // 2. Soft repulsion from central card area to keep center readable
+          const cx = width / 2;
+          const cy = height / 2;
+          const cdx = (this.x + this.ox) - cx;
+          const cdy = (this.y + this.oy) - cy;
+          const distToCenter = Math.sqrt(cdx * cdx + cdy * cdy);
+          const centerRadius = Math.min(width, height) * 0.32;
+
+          if (distToCenter < centerRadius && distToCenter > 0) {
+            const push = (1 - distToCenter / centerRadius) * 0.18;
+            this.x += (cdx / distToCenter) * push;
+            this.y += (cdy / distToCenter) * push;
+          }
+
+          // 3. Mouse gentle deflection
+          if (mouse.active) {
+            const curX = this.x + this.ox;
+            const curY = this.y + this.oy;
+            const mdx = curX - mouse.x;
+            const mdy = curY - mouse.y;
+            const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+
+            if (mdist < mouse.radius && mdist > 0) {
+              const force = (1 - mdist / mouse.radius) * 1.8;
+              this.ovx += (mdx / mdist) * force * 0.3;
+              this.ovy += (mdy / mdist) * force * 0.3;
+              this.glowBonus = Math.min(0.35, this.glowBonus + 0.04);
+            }
+          }
+
+          // Damping & return
+          this.ox += this.ovx;
+          this.oy += this.ovy;
+          this.ovx *= 0.93;
+          this.ovy *= 0.93;
+          this.ox *= 0.94;
+          this.oy *= 0.94;
+          this.glowBonus *= 0.96;
+
+          // 4. Wrap around boundaries smoothly
+          const margin = 45;
+          if (this.x < -margin) this.x = width + margin;
+          else if (this.x > width + margin) this.x = -margin;
+          if (this.y < -margin) this.y = height + margin;
+          else if (this.y > height + margin) this.y = -margin;
+        }
+
+        draw(ctx) {
+          const px = this.x + this.ox;
+          const py = this.y + this.oy;
+          const { r, g, b } = this.color;
+
+          // Fade out towards center for maximum clarity
+          const cx = width / 2;
+          const cy = height / 2;
+          const distToCenter = Math.sqrt((px - cx) ** 2 + (py - cy) ** 2);
+          const centerDim = Math.min(1, Math.max(0.18, (distToCenter - 60) / (width * 0.32)));
+
+          const alpha = Math.min(1, Math.max(0.04, (this.baseAlpha * centerDim) + this.glowBonus));
+          const s = this.size * this.scaleMod;
+
+          ctx.save();
+          ctx.translate(px, py);
+          ctx.rotate(this.angle);
+          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.6})`;
+          ctx.lineWidth = this.layer === 0 ? 1.0 : (this.layer === 1 ? 1.2 : 1.4);
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+
+          // Neon ambient glow
+          if (this.layer === 2 || this.glowBonus > 0.04) {
+            ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${alpha * 0.85})`;
+            ctx.shadowBlur = (this.layer === 2 ? 8 : 4) + this.glowBonus * 12;
+          }
+
+          // Precise outline drawings for all 26 educational & presentation symbols
+          switch (this.shape) {
+            case 'pencil':
+              ctx.strokeRect(-s * 0.35, -s * 1.1, s * 0.7, s * 1.8);
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.35, s * 0.7); ctx.lineTo(0, s * 1.3); ctx.lineTo(s * 0.35, s * 0.7);
+              ctx.closePath();
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.18, s * 1.0); ctx.lineTo(0, s * 1.3); ctx.lineTo(s * 0.18, s * 1.0);
+              ctx.closePath();
+              ctx.fill();
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.35, -s * 0.75); ctx.lineTo(s * 0.35, -s * 0.75);
+              ctx.stroke();
+              break;
+
+            case 'pen':
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.3, -s * 1.2);
+              ctx.lineTo(s * 0.3, -s * 1.2);
+              ctx.lineTo(s * 0.3, s * 0.5);
+              ctx.lineTo(0, s * 1.25);
+              ctx.lineTo(-s * 0.3, s * 0.5);
+              ctx.closePath();
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(s * 0.3, -s * 0.9);
+              ctx.lineTo(s * 0.55, -s * 0.8);
+              ctx.lineTo(s * 0.55, -s * 0.2);
+              ctx.lineTo(s * 0.3, -s * 0.2);
+              ctx.stroke();
+              break;
+
+            case 'open-book':
+              ctx.beginPath();
+              ctx.moveTo(0, -s * 0.2);
+              ctx.quadraticCurveTo(-s * 0.55, -s * 0.65, -s * 1.1, -s * 0.35);
+              ctx.lineTo(-s * 1.1, s * 0.55);
+              ctx.quadraticCurveTo(-s * 0.55, s * 0.25, 0, s * 0.7);
+              ctx.quadraticCurveTo(s * 0.55, s * 0.25, s * 1.1, s * 0.55);
+              ctx.lineTo(s * 1.1, -s * 0.35);
+              ctx.quadraticCurveTo(s * 0.55, -s * 0.65, 0, -s * 0.2);
+              ctx.closePath();
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(0, -s * 0.2); ctx.lineTo(0, s * 0.7);
+              ctx.stroke();
+              break;
+
+            case 'closed-book':
+              ctx.strokeRect(-s * 0.75, -s * 1.0, s * 1.5, s * 2.0);
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.45, -s * 1.0); ctx.lineTo(-s * 0.45, s * 1.0);
+              ctx.stroke();
+              break;
+
+            case 'notebook':
+              ctx.strokeRect(-s * 0.65, -s * 0.95, s * 1.4, s * 1.9);
+              for (let y = -s * 0.65; y <= s * 0.65; y += s * 0.35) {
+                ctx.beginPath();
+                ctx.arc(-s * 0.65, y, s * 0.12, -Math.PI / 2, Math.PI / 2);
+                ctx.stroke();
+              }
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.25, -s * 0.35); ctx.lineTo(s * 0.45, -s * 0.35);
+              ctx.moveTo(-s * 0.25, 0); ctx.lineTo(s * 0.45, 0);
+              ctx.moveTo(-s * 0.25, s * 0.35); ctx.lineTo(s * 0.45, s * 0.35);
+              ctx.stroke();
+              break;
+
+            case 'ruler':
+              ctx.strokeRect(-s * 1.2, -s * 0.35, s * 2.4, s * 0.7);
+              for (let x = -s * 0.85; x <= s * 0.85; x += s * 0.28) {
+                ctx.beginPath();
+                ctx.moveTo(x, -s * 0.35);
+                ctx.lineTo(x, -s * 0.05);
+                ctx.stroke();
+              }
+              break;
+
+            case 'calculator':
+              if (ctx.roundRect) ctx.roundRect(-s * 0.75, -s * 1.0, s * 1.5, s * 2.0, s * 0.2);
+              else ctx.strokeRect(-s * 0.75, -s * 1.0, s * 1.5, s * 2.0);
+              ctx.stroke();
+              ctx.strokeRect(-s * 0.5, -s * 0.75, s * 1.0, s * 0.4);
+              for (let row = 0; row < 2; row++) {
+                for (let col = 0; col < 3; col++) {
+                  ctx.beginPath();
+                  ctx.arc(-s * 0.35 + col * s * 0.35, -s * 0.05 + row * s * 0.4, s * 0.08, 0, Math.PI * 2);
+                  ctx.fill();
+                }
+              }
+              break;
+
+            case 'paper-sheet':
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.75, -s * 1.0);
+              ctx.lineTo(s * 0.25, -s * 1.0);
+              ctx.lineTo(s * 0.75, -s * 0.5);
+              ctx.lineTo(s * 0.75, s * 1.0);
+              ctx.lineTo(-s * 0.75, s * 1.0);
+              ctx.closePath();
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(s * 0.25, -s * 1.0);
+              ctx.lineTo(s * 0.25, -s * 0.5);
+              ctx.lineTo(s * 0.75, -s * 0.5);
+              ctx.stroke();
+              break;
+
+            case 'sticky-note':
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.85, -s * 0.85);
+              ctx.lineTo(s * 0.85, -s * 0.85);
+              ctx.lineTo(s * 0.85, s * 0.45);
+              ctx.quadraticCurveTo(s * 0.45, s * 0.85, -s * 0.85, s * 0.85);
+              ctx.closePath();
+              ctx.stroke();
+              break;
+
+            case 'paperclip':
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.35, s * 0.75);
+              ctx.lineTo(-s * 0.35, -s * 0.55);
+              ctx.arc(0, -s * 0.55, s * 0.35, Math.PI, 0, false);
+              ctx.lineTo(s * 0.35, s * 0.65);
+              ctx.arc(s * 0.12, s * 0.65, s * 0.23, 0, Math.PI, false);
+              ctx.lineTo(-s * 0.11, -s * 0.25);
+              ctx.arc(0.04, -s * 0.25, s * 0.15, Math.PI, 0, false);
+              ctx.lineTo(s * 0.19, s * 0.35);
+              ctx.stroke();
+              break;
+
+            case 'lightbulb':
+              ctx.beginPath();
+              ctx.arc(0, -s * 0.3, s * 0.6, 0.25 * Math.PI, 0.75 * Math.PI, true);
+              ctx.lineTo(-s * 0.22, s * 0.4);
+              ctx.lineTo(s * 0.22, s * 0.4);
+              ctx.closePath();
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.18, s * 0.6); ctx.lineTo(s * 0.18, s * 0.6);
+              ctx.moveTo(-s * 0.1, s * 0.78); ctx.lineTo(s * 0.1, s * 0.78);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.12, -s * 0.15); ctx.lineTo(0, -s * 0.4); ctx.lineTo(s * 0.12, -s * 0.15);
+              ctx.stroke();
+              break;
+
+            case 'grad-cap':
+              ctx.beginPath();
+              ctx.moveTo(0, -s * 0.65);
+              ctx.lineTo(s * 1.1, -s * 0.15);
+              ctx.lineTo(0, s * 0.28);
+              ctx.lineTo(-s * 1.1, -s * 0.15);
+              ctx.closePath();
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.55, 0.05);
+              ctx.quadraticCurveTo(0, s * 0.7, s * 0.55, 0.05);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(s * 0.55, -s * 0.38);
+              ctx.lineTo(s * 0.85, s * 0.45);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(s * 0.85, s * 0.52, s * 0.09, 0, Math.PI * 2);
+              ctx.fill();
+              break;
+
+            case 'school-bag':
+              if (ctx.roundRect) ctx.roundRect(-s * 0.75, -s * 0.65, s * 1.5, s * 1.5, s * 0.25);
+              else ctx.strokeRect(-s * 0.75, -s * 0.65, s * 1.5, s * 1.5);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(0, -s * 0.65, s * 0.28, Math.PI, 0);
+              ctx.stroke();
+              ctx.strokeRect(-s * 0.45, -s * 0.05, s * 0.9, s * 0.65);
+              break;
+
+            case 'magnifying-glass':
+              ctx.beginPath();
+              ctx.arc(-s * 0.2, -s * 0.2, s * 0.6, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(s * 0.22, s * 0.22);
+              ctx.lineTo(s * 0.9, s * 0.9);
+              ctx.stroke();
+              break;
+
+            case 'globe':
+              ctx.beginPath();
+              ctx.arc(0, -s * 0.18, s * 0.7, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.ellipse(0, -s * 0.18, s * 0.7, s * 0.26, 0, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.ellipse(0, -s * 0.18, s * 0.26, s * 0.7, 0, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(0, -s * 0.18, s * 0.88, 0.3 * Math.PI, 0.9 * Math.PI);
+              ctx.lineTo(0, s * 0.8);
+              ctx.moveTo(-s * 0.35, s * 0.8);
+              ctx.lineTo(s * 0.35, s * 0.8);
+              ctx.stroke();
+              break;
+
+            case 'flask':
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.18, -s * 0.95);
+              ctx.lineTo(s * 0.18, -s * 0.95);
+              ctx.lineTo(s * 0.18, -s * 0.35);
+              ctx.lineTo(s * 0.8, s * 0.75);
+              ctx.lineTo(-s * 0.8, s * 0.75);
+              ctx.lineTo(-s * 0.18, -s * 0.35);
+              ctx.closePath();
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.52, s * 0.32); ctx.lineTo(s * 0.52, s * 0.32);
+              ctx.stroke();
+              break;
+
+            case 'presentation-chart':
+              ctx.strokeRect(-s * 0.95, -s * 0.75, s * 1.9, s * 1.2);
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.55, s * 0.25); ctx.lineTo(-s * 0.55, -s * 0.1);
+              ctx.moveTo(-s * 0.05, s * 0.25); ctx.lineTo(-s * 0.05, -s * 0.38);
+              ctx.moveTo(s * 0.45, s * 0.25); ctx.lineTo(s * 0.45, -s * 0.55);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.45, s * 0.45); ctx.lineTo(-s * 0.75, s * 1.0);
+              ctx.moveTo(s * 0.45, s * 0.45); ctx.lineTo(s * 0.75, s * 1.0);
+              ctx.stroke();
+              break;
+
+            case 'math-sigma':
+              ctx.beginPath();
+              ctx.moveTo(s * 0.55, -s * 0.75);
+              ctx.lineTo(-s * 0.55, -s * 0.75);
+              ctx.lineTo(0, 0);
+              ctx.lineTo(-s * 0.55, s * 0.75);
+              ctx.lineTo(s * 0.55, s * 0.75);
+              ctx.stroke();
+              break;
+
+            case 'math-pi':
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.75, -s * 0.65);
+              ctx.lineTo(s * 0.75, -s * 0.65);
+              ctx.moveTo(-s * 0.3, -s * 0.65); ctx.lineTo(-s * 0.3, s * 0.75);
+              ctx.moveTo(s * 0.3, -s * 0.65); ctx.lineTo(s * 0.3, s * 0.75);
+              ctx.stroke();
+              break;
+
+            case 'math-sqrt':
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.75, 0);
+              ctx.lineTo(-s * 0.45, 0);
+              ctx.lineTo(-s * 0.18, s * 0.75);
+              ctx.lineTo(s * 0.18, -s * 0.75);
+              ctx.lineTo(s * 0.75, -s * 0.75);
+              ctx.stroke();
+              break;
+
+            case 'check-mark':
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.65, 0);
+              ctx.lineTo(-s * 0.1, s * 0.55);
+              ctx.lineTo(s * 0.75, -s * 0.65);
+              ctx.stroke();
+              break;
+
+            case 'small-arrow':
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.75, s * 0.75);
+              ctx.lineTo(s * 0.65, -s * 0.65);
+              ctx.moveTo(s * 0.1, -s * 0.65);
+              ctx.lineTo(s * 0.65, -s * 0.65);
+              ctx.lineTo(s * 0.65, -s * 0.1);
+              ctx.stroke();
+              break;
+
+            case 'sparkle':
+              ctx.beginPath();
+              ctx.moveTo(0, -s * 1.15);
+              ctx.quadraticCurveTo(0, 0, s * 1.15, 0);
+              ctx.quadraticCurveTo(0, 0, 0, s * 1.15);
+              ctx.quadraticCurveTo(0, 0, -s * 1.15, 0);
+              ctx.quadraticCurveTo(0, 0, 0, -s * 1.15);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+              break;
+
+            case 'diamond':
+              ctx.beginPath();
+              ctx.moveTo(0, -s * 1.05);
+              ctx.lineTo(s * 0.75, 0);
+              ctx.lineTo(0, s * 1.05);
+              ctx.lineTo(-s * 0.75, 0);
+              ctx.closePath();
+              ctx.stroke();
+              break;
+
+            case 'circle-cross':
+              ctx.beginPath();
+              ctx.arc(0, 0, s * 0.75, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.moveTo(-s * 0.35, 0); ctx.lineTo(s * 0.35, 0);
+              ctx.moveTo(0, -s * 0.35); ctx.lineTo(0, s * 0.35);
+              ctx.stroke();
+              break;
+
+            case 'geometric-hex':
+              ctx.beginPath();
+              for (let i = 0; i < 6; i++) {
+                const a = (i * Math.PI) / 3;
+                const hx = Math.cos(a) * s * 0.9;
+                const hy = Math.sin(a) * s * 0.9;
+                if (i === 0) ctx.moveTo(hx, hy);
+                else ctx.lineTo(hx, hy);
+              }
+              ctx.closePath();
+              ctx.stroke();
+              break;
+          }
+
+          ctx.restore();
+        }
+      }
+
+      class BurstParticle {
+        constructor(x, y, color) {
+          this.x = x;
+          this.y = y;
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 2.5 + 1.0;
+          this.vx = Math.cos(angle) * speed;
+          this.vy = Math.sin(angle) * speed;
+          this.color = color || palette[Math.floor(Math.random() * palette.length)];
+          this.size = Math.random() * 2.5 + 1.2;
+          this.alpha = 0.85;
+          this.decay = Math.random() * 0.02 + 0.015;
+          this.shape = ['sparkle', 'diamond', 'check-mark', 'math-pi'][Math.floor(Math.random() * 4)];
+          this.angle = Math.random() * Math.PI * 2;
+          this.rotSpeed = (Math.random() - 0.5) * 0.05;
+        }
+
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.angle += this.rotSpeed;
+          this.alpha -= this.decay;
+          return this.alpha > 0;
+        }
+
+        draw(ctx) {
+          if (this.alpha <= 0) return;
+          const { r, g, b } = this.color;
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(this.angle);
+          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+          ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+          ctx.shadowBlur = 8;
+          ctx.lineWidth = 1.0;
+
+          const s = this.size;
+          ctx.beginPath();
+          ctx.moveTo(0, -s); ctx.quadraticCurveTo(0, 0, s, 0);
+          ctx.quadraticCurveTo(0, 0, 0, s); ctx.quadraticCurveTo(0, 0, -s, 0);
+          ctx.quadraticCurveTo(0, 0, 0, -s);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      class Ripple {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+          this.radius = 0;
+          this.maxRadius = Math.min(width, height) * 0.26 + 70;
+          this.alpha = 0.45;
+          this.color = palette[Math.floor(Math.random() * palette.length)];
+        }
+
+        update() {
+          this.radius += 3.8;
+          this.alpha = Math.max(0, 0.45 * (1 - this.radius / this.maxRadius));
+          return this.radius < this.maxRadius && this.alpha > 0;
+        }
+
+        draw(ctx) {
+          if (this.alpha <= 0) return;
+          const { r, g, b } = this.color;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${this.alpha * 0.8})`;
+          ctx.lineWidth = 1.4;
+          ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+          ctx.shadowBlur = 12;
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      function initDoodles() {
+        doodles.length = 0;
+        const total = width < 768 ? 26 : 48;
+        const bgCount = Math.floor(total * 0.32);
+        const midCount = Math.floor(total * 0.42);
+        const fgCount = total - bgCount - midCount;
+
+        for (let i = 0; i < bgCount; i++) doodles.push(new EducationalDoodle(0, true));
+        for (let i = 0; i < midCount; i++) doodles.push(new EducationalDoodle(1, true));
+        for (let i = 0; i < fgCount; i++) doodles.push(new EducationalDoodle(2, true));
+      }
+
+      function initDust() {
+        ambientDust.length = 0;
+        const count = width < 768 ? 16 : 30;
+        for (let i = 0; i < count; i++) {
+          ambientDust.push(new AmbientParticle());
+        }
+      }
+
+      function createClickEffect(x, y) {
+        ripples.push(new Ripple(x, y));
+
+        // Shockwave gentle push outward on nearby doodles
+        const shockRadius = 200;
+        doodles.forEach(d => {
+          const dx = (d.x + d.ox) - x;
+          const dy = (d.y + d.oy) - y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < shockRadius && dist > 0) {
+            const force = (1 - dist / shockRadius) * 4.2;
+            d.ovx += (dx / dist) * force;
+            d.ovy += (dy / dist) * force;
+            d.glowBonus = Math.min(0.4, d.glowBonus + 0.25);
+          }
+        });
+
+        // Spawn 3-6 subtle micro-sparkle particles
+        const burstCount = Math.floor(Math.random() * 4) + 3;
+        for (let i = 0; i < burstCount; i++) {
+          burstParticles.push(new BurstParticle(x, y));
+        }
+      }
+
+      function loop() {
+        ctx.clearRect(0, 0, width, height);
+
+        if (prefersReduced) {
+          doodles.forEach(d => d.draw(ctx));
+          return;
+        }
+
+        // Draw ambient floating dust
+        ambientDust.forEach(p => {
+          p.update();
+          p.draw(ctx);
+        });
+
+        // Update & draw ripples
+        for (let i = ripples.length - 1; i >= 0; i--) {
+          if (ripples[i].update()) {
+            ripples[i].draw(ctx);
+          } else {
+            ripples.splice(i, 1);
+          }
+        }
+
+        // Update & draw burst particles
+        for (let i = burstParticles.length - 1; i >= 0; i--) {
+          if (burstParticles[i].update()) {
+            burstParticles[i].draw(ctx);
+          } else {
+            burstParticles.splice(i, 1);
+          }
+        }
+
+        // Update & draw continuous floating educational doodles
+        doodles.forEach(d => {
+          d.update();
+          d.draw(ctx);
+        });
+
+        requestAnimationFrame(loop);
+      }
+
+      function isInteractiveElement(target) {
+        if (!target) return false;
+        return Boolean(
+          target.closest('button') ||
+          target.closest('input') ||
+          target.closest('label') ||
+          target.closest('a') ||
+          target.closest('.pin-card') ||
+          target.closest('.board-nav') ||
+          target.closest('.top-bar') ||
+          target.closest('.settings-card') ||
+          target.closest('canvas:not(#ambientDoodleCanvas)')
+        );
+      }
+
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        mouse.active = true;
+      }, { passive: true });
+
+      window.addEventListener('mouseleave', () => {
+        mouse.active = false;
+      });
+
+      window.addEventListener('pointerdown', (e) => {
+        if (!isInteractiveElement(e.target)) {
+          createClickEffect(e.clientX, e.clientY);
+        }
+      }, { passive: true });
+
+      window.addEventListener('resize', resize, { passive: true });
+
+      resize();
+      if (prefersReduced) {
+        doodles.forEach(d => d.draw(ctx));
+      } else {
+        loop();
+      }
+    })();
+  </script>
+</body>
+</html>
