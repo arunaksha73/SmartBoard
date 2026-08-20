@@ -973,9 +973,641 @@
         gap: 6px;
       }
     }
+
+    /* ── Phone Pairing Initial Screen ── */
+    .pairing-card-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 100%;
+    }
+
+    .device-sync-graphic {
+      width: 130px;
+      height: 90px;
+      margin: 4px auto 20px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .graphic-monitor {
+      width: 86px;
+      height: 56px;
+      border: 2px solid rgba(129, 140, 248, 0.4);
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.7);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .graphic-monitor::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      width: 24px;
+      height: 6px;
+      background: rgba(129, 140, 248, 0.35);
+      border-radius: 2px;
+    }
+
+    .graphic-screen-lines {
+      width: 60%;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .graphic-screen-line {
+      height: 2px;
+      background: rgba(129, 140, 248, 0.5);
+      border-radius: 1px;
+    }
+
+    .graphic-phone {
+      position: absolute;
+      right: 0;
+      bottom: 4px;
+      width: 32px;
+      height: 50px;
+      border: 2px solid #818cf8;
+      border-radius: 6px;
+      background: #0f172a;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 12px rgba(129, 140, 248, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .graphic-phone-screen {
+      width: 20px;
+      height: 34px;
+      background: rgba(99, 102, 241, 0.2);
+      border-radius: 3px;
+      border: 1px solid rgba(129, 140, 248, 0.3);
+    }
+
+    .btn-action-primary {
+      width: 100%;
+      padding: 18px 20px;
+      border-radius: 18px;
+      border: none;
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: #ffffff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.45);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .btn-action-primary:hover {
+      background: linear-gradient(135deg, #4338ca, #4f46e5);
+      box-shadow: 0 12px 30px -5px rgba(79, 70, 229, 0.6);
+      transform: translateY(-1px);
+    }
+
+    .btn-action-primary:active {
+      transform: scale(0.97);
+    }
+
+    .btn-action-secondary {
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 18px;
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      color: #f1f5f9;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .btn-action-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(129, 140, 248, 0.4);
+      color: #ffffff;
+    }
+
+    .btn-action-secondary:active {
+      transform: scale(0.97);
+    }
+
+    .pairing-or-row {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .pairing-or-row::before,
+    .pairing-or-row::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .pairing-or-badge {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .wifi-notice-pill {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 22px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(129, 140, 248, 0.2);
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 500;
+      text-align: center;
+    }
+
+    .wifi-notice-pill svg {
+      flex-shrink: 0;
+      stroke: #818cf8;
+    }
+
+    .btn-link-upload {
+      margin-top: 14px;
+      background: transparent;
+      border: none;
+      color: #818cf8;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-link-upload:hover {
+      color: #c7d2fe;
+      background: rgba(99, 102, 241, 0.12);
+    }
+
+    /* ── Fullscreen QR Scanner Overlay ── */
+    .scanner-overlay {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #050811;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px 16px 36px;
+      box-sizing: border-box;
+      animation: fadeInSettings 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .scanner-top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      z-index: 10;
+    }
+
+    .scanner-nav-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .scanner-nav-btn:active {
+      transform: scale(0.92);
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .scanner-header-info {
+      text-align: center;
+      margin: 10px 0 16px;
+      z-index: 10;
+    }
+
+    .scanner-header-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .scanner-header-sub {
+      font-size: 13.5px;
+      color: #94a3b8;
+    }
+
+    .scanner-viewport-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+      height: 320px;
+      margin: 0 auto;
+      border-radius: 28px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000000;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 25px rgba(99, 102, 241, 0.25);
+    }
+
+    #qr-reader-video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+    }
+
+    #qr-reader-video video {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      border-radius: 28px;
+    }
+
+    /* Scanner Viewfinder Framing Overlay */
+    .scanner-frame-overlay {
+      position: absolute;
+      inset: 20px;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .corner-bracket {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-color: #818cf8;
+      border-style: solid;
+      border-width: 0;
+      box-shadow: 0 0 12px rgba(129, 140, 248, 0.6);
+    }
+
+    .corner-tl {
+      top: 0; left: 0;
+      border-top-width: 3.5px;
+      border-left-width: 3.5px;
+      border-top-left-radius: 12px;
+    }
+
+    .corner-tr {
+      top: 0; right: 0;
+      border-top-width: 3.5px;
+      border-right-width: 3.5px;
+      border-top-right-radius: 12px;
+    }
+
+    .corner-bl {
+      bottom: 0; left: 0;
+      border-bottom-width: 3.5px;
+      border-left-width: 3.5px;
+      border-bottom-left-radius: 12px;
+    }
+
+    .corner-br {
+      bottom: 0; right: 0;
+      border-bottom-width: 3.5px;
+      border-right-width: 3.5px;
+      border-bottom-right-radius: 12px;
+    }
+
+    /* Scanning Laser Animation Line */
+    .scanner-laser-line {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #818cf8, #ffffff, #818cf8, transparent);
+      box-shadow: 0 0 16px #818cf8, 0 0 8px #ffffff;
+      border-radius: 2px;
+      animation: laserScanAnim 2.2s infinite ease-in-out alternate;
+      z-index: 6;
+    }
+
+    @keyframes laserScanAnim {
+      0%   { top: 25px; opacity: 0.8; }
+      100% { top: 255px; opacity: 0.95; }
+    }
+
+    .scanner-feedback-text {
+      text-align: center;
+      font-size: 13.5px;
+      color: #cbd5e1;
+      font-weight: 500;
+      margin: 18px 0;
+      z-index: 10;
+    }
+
+    .scanner-bottom-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      max-width: 320px;
+      margin: 0 auto;
+      z-index: 10;
+    }
+
+    .btn-scanner-cancel {
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-scanner-cancel:active {
+      transform: scale(0.97);
+    }
+
+    /* ── Step-By-Step Connecting & Synchronizing Overlay ── */
+    .connection-status-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 10, 18, 0.88);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      z-index: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      animation: fadeInSettings 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .connection-status-card {
+      width: 100%;
+      max-width: 380px;
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 28px;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 35px rgba(79, 70, 229, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .conn-pulse-icon-box {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.15);
+      border: 2px solid #818cf8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      box-shadow: 0 0 25px rgba(129, 140, 248, 0.4);
+      animation: pulseLinkBox 1.6s infinite ease-in-out;
+    }
+
+    .conn-pulse-icon-box.success {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: #10b981;
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.5);
+      animation: none;
+    }
+
+    @keyframes pulseLinkBox {
+      0%   { transform: scale(0.95); box-shadow: 0 0 15px rgba(129, 140, 248, 0.3); }
+      50%  { transform: scale(1.05); box-shadow: 0 0 30px rgba(129, 140, 248, 0.6); }
+      100% { transform: scale(0.95); box-shadow: 0 0 15px rgba(129, 140, 248, 0.3); }
+    }
+
+    .connection-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .connection-sub {
+      font-size: 13.5px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
+
+    .connection-step-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
+    .connection-step-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .step-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(129, 140, 248, 0.25);
+      border-top-color: #818cf8;
+      border-radius: 50%;
+      animation: spinStep 0.8s linear infinite;
+    }
+
+    @keyframes spinStep {
+      to { transform: rotate(360deg); }
+    }
+
+    .step-check {
+      color: #10b981;
+      font-weight: 700;
+    }
+
+    /* ── Modal Error Card (Invalid QR / Permission Denied) ── */
+    .scanner-modal-card {
+      width: 100%;
+      max-width: 360px;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 24px;
+      padding: 28px 22px;
+      text-align: center;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 68, 68, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .scanner-modal-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1.5px solid rgba(239, 68, 68, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      color: #f87171;
+    }
+
+    /* ── Phone PIN Input Screen ── */
+    .pin-entry-card {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .phone-pin-boxes {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 12px 0 24px;
+    }
+
+    .phone-pin-box {
+      width: 56px;
+      height: 68px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 2px solid rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: #818cf8;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .phone-pin-box.active {
+      border-color: #818cf8;
+      background: rgba(99, 102, 241, 0.15);
+      box-shadow: 0 0 18px rgba(99, 102, 241, 0.4);
+    }
+
+    .phone-pin-keypad {
+      width: 100%;
+      max-width: 320px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .phone-key-btn {
+      height: 54px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+
+    .phone-key-btn:active {
+      background: rgba(99, 102, 241, 0.35);
+      transform: scale(0.94);
+    }
+
+    .phone-key-btn.action-key {
+      color: #94a3b8;
+    }
+
+    .phone-key-btn.submit-key {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35));
+      border-color: rgba(16, 185, 129, 0.5);
+      color: #6ee7b7;
+    }
+
+    .phone-key-btn.submit-key:active {
+      background: #10b981;
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
+
+  <!-- CDN for Pure Browser QR Scanning -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <!-- Interactive Glowing Doodle Particle Canvas -->
   <canvas id="ambientDoodleCanvas"></canvas>
@@ -995,10 +1627,111 @@
       </div>
     </div>
 
-    <!-- SCREEN 1: UPLOAD -->
-    <div id="screen-upload">
-      <h1>Control your presentation from your pocket.</h1>
-      <p class="subtitle">Upload a presentation or document to generate a smartboard pairing code.</p>
+    <!-- SCREEN 0: PHONE PAIRING INITIAL SCREEN -->
+    <div id="screen-pairing" class="pairing-card-hero">
+      <div class="device-sync-graphic">
+        <div class="graphic-monitor">
+          <div class="graphic-screen-lines">
+            <div class="graphic-screen-line"></div>
+            <div class="graphic-screen-line"></div>
+            <div class="graphic-screen-line"></div>
+          </div>
+        </div>
+        <div class="graphic-phone">
+          <div class="graphic-phone-screen"></div>
+        </div>
+      </div>
+
+      <h1>Connect to SmartBoard</h1>
+      <p class="subtitle" style="margin-bottom: 22px;">Control your presentation wirelessly from your phone.</p>
+
+      <button type="button" class="btn-action-primary" id="btnOpenScanner">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>
+        </svg>
+        <span>Scan QR Code</span>
+      </button>
+
+      <div class="pairing-or-row">
+        <span class="pairing-or-badge">OR</span>
+      </div>
+
+      <button type="button" class="btn-action-secondary" id="btnOpenPinEntry">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h.01"/><path d="M12 7h.01"/><path d="M17 7h.01"/><path d="M7 12h.01"/><path d="M12 12h.01"/><path d="M17 12h.01"/><path d="M7 17h.01"/><path d="M12 17h.01"/><path d="M17 17h.01"/>
+        </svg>
+        <span>Enter 4-Digit PIN</span>
+      </button>
+
+      <div class="wifi-notice-pill">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+        </svg>
+        <span>Make sure both devices are on the same Wi-Fi.</span>
+      </div>
+
+      <button type="button" class="btn-link-upload" id="btnToggleUpload">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <span>Or upload a presentation from phone</span>
+      </button>
+    </div>
+
+    <!-- SCREEN 1: PHONE PIN ENTRY -->
+    <div id="screen-enter-pin" class="pin-entry-card hidden">
+      <div style="width: 100%; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 12px;">
+        <button type="button" class="scanner-nav-btn" id="btnBackFromPin" style="width: 36px; height: 36px;" title="Back">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+      </div>
+
+      <h1>Enter 4-Digit PIN</h1>
+      <p class="subtitle" style="margin-bottom: 14px;">Enter the 4-digit PIN shown on the SmartBoard.</p>
+
+      <div class="phone-pin-boxes" id="phonePinBoxes">
+        <div class="phone-pin-box active" data-idx="0"></div>
+        <div class="phone-pin-box" data-idx="1"></div>
+        <div class="phone-pin-box" data-idx="2"></div>
+        <div class="phone-pin-box" data-idx="3"></div>
+      </div>
+
+      <div class="phone-pin-keypad" id="phonePinKeypad">
+        <button type="button" class="phone-key-btn" data-key="1">1</button>
+        <button type="button" class="phone-key-btn" data-key="2">2</button>
+        <button type="button" class="phone-key-btn" data-key="3">3</button>
+        <button type="button" class="phone-key-btn" data-key="4">4</button>
+        <button type="button" class="phone-key-btn" data-key="5">5</button>
+        <button type="button" class="phone-key-btn" data-key="6">6</button>
+        <button type="button" class="phone-key-btn" data-key="7">7</button>
+        <button type="button" class="phone-key-btn" data-key="8">8</button>
+        <button type="button" class="phone-key-btn" data-key="9">9</button>
+        <button type="button" class="phone-key-btn action-key" data-key="backspace" aria-label="Delete">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/>
+          </svg>
+        </button>
+        <button type="button" class="phone-key-btn" data-key="0">0</button>
+        <button type="button" class="phone-key-btn submit-key" data-key="submit" aria-label="Connect">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="status-text error" id="pinEntryError" style="margin-top: 4px;"></div>
+    </div>
+
+    <!-- SCREEN 2: UPLOAD (Dropzone) -->
+    <div id="screen-upload" class="hidden">
+      <div style="width: 100%; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 12px;">
+        <button type="button" class="scanner-nav-btn" id="btnBackFromUpload" style="width: 36px; height: 36px;" title="Back">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+      </div>
+
+      <h1>Upload Presentation</h1>
+      <p class="subtitle">Upload a document to start a wireless SmartBoard session.</p>
 
       <label class="dropzone" id="dropzone">
         <div class="icon-box">
@@ -1021,7 +1754,7 @@
       </div>
     </div>
 
-    <!-- SCREEN 2: REMOTE CONTROLLER -->
+    <!-- SCREEN 3: REMOTE CONTROLLER -->
     <div id="screen-remote" class="hidden">
 
       <!-- PIN display -->
@@ -1064,27 +1797,46 @@
 
         <!-- BRIGHTNESS -->
         <div class="ctrl-section">
-          <div class="section-label">☀️ &nbsp;Brightness</div>
+          <div class="section-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            Brightness
+          </div>
           <div class="brightness-row">
-            <span class="brightness-icon">🌑</span>
+            <span class="brightness-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 4h.01"/><path d="M20 12h.01"/><path d="M12 20h.01"/><path d="M4 12h.01"/></svg>
+            </span>
             <input type="range" id="brightnessSlider" min="20" max="100" value="100" step="5" />
-            <span class="brightness-icon">☀️</span>
+            <span class="brightness-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+            </span>
             <span class="brightness-value" id="brightnessValue">100%</span>
           </div>
         </div>
 
         <!-- THEME -->
         <div class="ctrl-section">
-          <div class="section-label">🎨 &nbsp;Display Theme</div>
+          <div class="section-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.92 0 1.7-.72 1.7-1.65 0-.43-.17-.83-.45-1.12-.27-.29-.44-.69-.44-1.13 0-.93.77-1.7 1.7-1.7h2.49c2.8 0 5-2.2 5-5 0-5.5-4.5-10-10-10Z"/></svg>
+            Display Theme
+          </div>
           <div class="btn-row">
-            <button class="btn-theme day-active" id="btnDay">☀️ Day Mode</button>
-            <button class="btn-theme" id="btnNight">🌙 Night Mode</button>
+            <button class="btn-theme day-active" id="btnDay">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              <span>Day Mode</span>
+            </button>
+            <button class="btn-theme" id="btnNight">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+              <span>Night Mode</span>
+            </button>
           </div>
         </div>
 
         <!-- ZOOM -->
         <div class="ctrl-section">
-          <div class="section-label">🔍 &nbsp;Zoom</div>
+          <div class="section-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            Zoom
+          </div>
           <div class="zoom-row">
             <button class="btn-zoom zoom-out" id="btnZoomOut">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1098,9 +1850,18 @@
           </div>
         </div>
 
-        <!-- KEEP SCREEN ON -->
+        <!-- KEEP SCREEN ON & FULLSCREEN -->
         <div class="ctrl-section">
-          <div class="section-label">☀ &nbsp;Display</div>
+          <div class="section-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+            Display
+          </div>
+          <button class="btn-theme" id="btnFullscreen" style="width: 100%; margin-bottom: 14px; padding: 14px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+            </svg>
+            <span id="fullscreenBtnLabel">Full Screen</span>
+          </button>
           <div class="wakelock-row">
             <div class="wakelock-info">
               <div class="wakelock-title">Keep Screen On</div>
@@ -1116,7 +1877,10 @@
 
         <!-- EXIT SESSION -->
         <div class="ctrl-section">
-          <div class="section-label">⚡ &nbsp;Session</div>
+          <div class="section-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Session
+          </div>
           <button class="btn-exit" id="btnExit">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Exit Presentation
@@ -1125,9 +1889,118 @@
 
       </div><!-- end controls-panel -->
 
-      <button class="btn-reset" id="btnReset">Upload another presentation</button>
+      <button class="btn-reset" id="btnReset">Pair another SmartBoard</button>
     </div><!-- end screen-remote -->
   </div><!-- end container -->
+
+  <!-- DEDICATED FULL-SCREEN QR SCANNER UI -->
+  <div id="screen-qr-scanner" class="scanner-overlay hidden">
+    <div class="scanner-top-header">
+      <button type="button" class="scanner-nav-btn" id="btnScannerBack" title="Back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <div style="font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700; color: #818cf8; letter-spacing: 0.08em; text-transform: uppercase;">
+        Scan QR Code
+      </div>
+      <button type="button" class="scanner-nav-btn" id="btnToggleFlash" title="Toggle Torch">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="scanner-header-info">
+      <h2 class="scanner-header-title">SCAN QR CODE</h2>
+      <p class="scanner-header-sub">Point your camera at the SmartBoard QR code</p>
+    </div>
+
+    <div class="scanner-viewport-wrapper" id="scannerViewport">
+      <div id="qr-reader-video"></div>
+      <div class="scanner-frame-overlay">
+        <div class="corner-bracket corner-tl"></div>
+        <div class="corner-bracket corner-tr"></div>
+        <div class="corner-bracket corner-bl"></div>
+        <div class="corner-bracket corner-br"></div>
+        <div class="scanner-laser-line"></div>
+      </div>
+    </div>
+
+    <div class="scanner-feedback-text" id="scannerStatusText">Scanning for SmartBoard QR code...</div>
+
+    <div class="scanner-bottom-actions">
+      <button type="button" class="btn-scanner-cancel" id="btnCancelScanner">Cancel</button>
+    </div>
+  </div>
+
+  <!-- STEP-BY-STEP CONNECTING & SYNCHRONIZING OVERLAY -->
+  <div id="screen-connecting" class="connection-status-overlay hidden">
+    <div class="connection-status-card">
+      <div class="conn-pulse-icon-box" id="connIconBox">
+        <svg id="connIconSvg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+      </div>
+
+      <h2 class="connection-title" id="connModalTitle">Connecting...</h2>
+      <p class="connection-sub" id="connModalSub">Connecting to SmartBoard — Please wait a moment</p>
+
+      <div class="connection-step-list" id="connStepList">
+        <div class="connection-step-item" id="stepValidate">
+          <span>Validating session</span>
+          <div class="step-indicator" id="indValidate"><div class="step-spinner"></div></div>
+        </div>
+        <div class="connection-step-item" id="stepJoin">
+          <span>Joining presentation</span>
+          <div class="step-indicator" id="indJoin"><div class="step-spinner" style="opacity: 0.3;"></div></div>
+        </div>
+        <div class="connection-step-item" id="stepSync">
+          <span>Synchronizing...</span>
+          <div class="step-indicator" id="indSync"><div class="step-spinner" style="opacity: 0.3;"></div></div>
+        </div>
+      </div>
+
+      <button type="button" class="btn-action-primary hidden" id="btnGoToRemote" style="margin-top: 10px;">
+        <span>Go to Remote →</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- INVALID QR CODE MODAL -->
+  <div id="modal-invalid-qr" class="connection-status-overlay hidden">
+    <div class="scanner-modal-card">
+      <div class="scanner-modal-icon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <h2 class="connection-title">INVALID QR CODE</h2>
+      <p class="connection-sub" style="margin-bottom: 22px;">This QR code is not a valid SmartBoard pairing code.</p>
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+        <button type="button" class="btn-action-primary" id="btnRetryScan">Try Again</button>
+        <button type="button" class="btn-action-secondary" id="btnCancelInvalidQr">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAMERA PERMISSION DENIED MODAL -->
+  <div id="modal-camera-denied" class="connection-status-overlay hidden">
+    <div class="scanner-modal-card">
+      <div class="scanner-modal-icon">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+      </div>
+      <h2 class="connection-title">CAMERA ACCESS REQUIRED</h2>
+      <p class="connection-sub" style="margin-bottom: 22px;">Allow camera access in your browser settings to scan the SmartBoard QR code.</p>
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+        <button type="button" class="btn-action-primary" id="btnRetryCamera">Try Again</button>
+        <button type="button" class="btn-action-secondary" id="btnCameraEnterPin">Enter PIN Instead</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Professional Footer -->
   <footer class="app-footer">
@@ -1166,35 +2039,386 @@
     const SERVER_URL = window.location.origin;
 
     // ── DOM references ──
-    const fileInput      = document.getElementById('fileInput');
-    const progressBar    = document.getElementById('progressBar');
-    const progressFill   = document.getElementById('progressFill');
-    const statusText     = document.getElementById('statusText');
-    const screenUpload   = document.getElementById('screen-upload');
-    const screenRemote   = document.getElementById('screen-remote');
-    const pinContainer   = document.getElementById('pinContainer');
+    const fileInput          = document.getElementById('fileInput');
+    const progressBar        = document.getElementById('progressBar');
+    const progressFill       = document.getElementById('progressFill');
+    const statusText         = document.getElementById('statusText');
+    const screenPairing      = document.getElementById('screen-pairing');
+    const screenEnterPin     = document.getElementById('screen-enter-pin');
+    const screenUpload       = document.getElementById('screen-upload');
+    const screenRemote       = document.getElementById('screen-remote');
+    const screenQrScanner    = document.getElementById('screen-qr-scanner');
+    const screenConnecting    = document.getElementById('screen-connecting');
+    const modalInvalidQr     = document.getElementById('modal-invalid-qr');
+    const modalCameraDenied  = document.getElementById('modal-camera-denied');
+    const pinContainer       = document.getElementById('pinContainer');
+
+    const btnOpenScanner     = document.getElementById('btnOpenScanner');
+    const btnOpenPinEntry    = document.getElementById('btnOpenPinEntry');
+    const btnToggleUpload    = document.getElementById('btnToggleUpload');
+    const btnBackFromPin     = document.getElementById('btnBackFromPin');
+    const btnBackFromUpload  = document.getElementById('btnBackFromUpload');
+
+    const btnScannerBack     = document.getElementById('btnScannerBack');
+    const btnToggleFlash     = document.getElementById('btnToggleFlash');
+    const btnCancelScanner   = document.getElementById('btnCancelScanner');
+    const btnRetryScan       = document.getElementById('btnRetryScan');
+    const btnCancelInvalidQr = document.getElementById('btnCancelInvalidQr');
+    const btnRetryCamera     = document.getElementById('btnRetryCamera');
+    const btnCameraEnterPin  = document.getElementById('btnCameraEnterPin');
+
+    const phonePinKeypad     = document.getElementById('phonePinKeypad');
+    const pinEntryError      = document.getElementById('pinEntryError');
+
+    const connModalTitle     = document.getElementById('connModalTitle');
+    const connModalSub       = document.getElementById('connModalSub');
+    const connIconBox        = document.getElementById('connIconBox');
+    const connIconSvg        = document.getElementById('connIconSvg');
+    const indValidate        = document.getElementById('indValidate');
+    const indJoin            = document.getElementById('indJoin');
+    const indSync            = document.getElementById('indSync');
+    const btnGoToRemote      = document.getElementById('btnGoToRemote');
 
     const currentSlideDisplay = document.getElementById('currentSlideDisplay');
     const totalSlidesDisplay  = document.getElementById('totalSlidesDisplay');
 
-    const btnNext        = document.getElementById('btnNext');
-    const btnPrev        = document.getElementById('btnPrev');
-    const btnReset       = document.getElementById('btnReset');
-    const btnExit        = document.getElementById('btnExit');
-    const btnToggleControls = document.getElementById('btnToggleControls');
-    const toggleCtrlLabel   = document.getElementById('toggleCtrlLabel');
-    const toggleCtrlIcon    = document.getElementById('toggleCtrlIcon');
+    const btnNext            = document.getElementById('btnNext');
+    const btnPrev            = document.getElementById('btnPrev');
+    const btnReset           = document.getElementById('btnReset');
+    const btnExit            = document.getElementById('btnExit');
+    const btnToggleControls  = document.getElementById('btnToggleControls');
+    const toggleCtrlLabel    = document.getElementById('toggleCtrlLabel');
+    const toggleCtrlIcon     = document.getElementById('toggleCtrlIcon');
 
-    const brightnessSlider = document.getElementById('brightnessSlider');
-    const brightnessValue  = document.getElementById('brightnessValue');
-    const btnDay           = document.getElementById('btnDay');
-    const btnNight         = document.getElementById('btnNight');
-    const btnZoomIn        = document.getElementById('btnZoomIn');
-    const btnZoomOut       = document.getElementById('btnZoomOut');
-    const btnZoomReset     = document.getElementById('btnZoomReset');
+    const brightnessSlider   = document.getElementById('brightnessSlider');
+    const brightnessValue    = document.getElementById('brightnessValue');
+    const btnDay             = document.getElementById('btnDay');
+    const btnNight           = document.getElementById('btnNight');
+    const btnZoomIn          = document.getElementById('btnZoomIn');
+    const btnZoomOut         = document.getElementById('btnZoomOut');
+    const btnZoomReset       = document.getElementById('btnZoomReset');
+    const btnFullscreen      = document.getElementById('btnFullscreen');
+    const fullscreenBtnLabel = document.getElementById('fullscreenBtnLabel');
 
-    const connStatus       = document.getElementById('connStatus');
-    const connLabel        = document.getElementById('connLabel');
+    const connStatus         = document.getElementById('connStatus');
+    const connLabel          = document.getElementById('connLabel');
+
+    // ── Screen Navigation Helper ──
+    function showScreen(name) {
+      if (screenPairing) screenPairing.classList.add('hidden');
+      if (screenEnterPin) screenEnterPin.classList.add('hidden');
+      if (screenUpload) screenUpload.classList.add('hidden');
+      if (screenRemote) screenRemote.classList.add('hidden');
+
+      if (name === 'pairing' && screenPairing) screenPairing.classList.remove('hidden');
+      else if (name === 'pin' && screenEnterPin) screenEnterPin.classList.remove('hidden');
+      else if (name === 'upload' && screenUpload) screenUpload.classList.remove('hidden');
+      else if (name === 'remote' && screenRemote) screenRemote.classList.remove('hidden');
+    }
+
+    // Navigation triggers
+    if (btnOpenScanner) btnOpenScanner.addEventListener('click', () => startQrScanner());
+    if (btnOpenPinEntry) btnOpenPinEntry.addEventListener('click', () => { resetPhonePin(); showScreen('pin'); });
+    if (btnToggleUpload) btnToggleUpload.addEventListener('click', () => showScreen('upload'));
+    if (btnBackFromPin) btnBackFromPin.addEventListener('click', () => showScreen('pairing'));
+    if (btnBackFromUpload) btnBackFromUpload.addEventListener('click', () => showScreen('pairing'));
+
+    if (btnScannerBack) btnScannerBack.addEventListener('click', () => stopQrScanner());
+    if (btnCancelScanner) btnCancelScanner.addEventListener('click', () => stopQrScanner());
+
+    if (btnRetryScan) {
+      btnRetryScan.addEventListener('click', () => {
+        if (modalInvalidQr) modalInvalidQr.classList.add('hidden');
+        startQrScanner();
+      });
+    }
+
+    if (btnCancelInvalidQr) {
+      btnCancelInvalidQr.addEventListener('click', () => {
+        if (modalInvalidQr) modalInvalidQr.classList.add('hidden');
+        showScreen('pairing');
+      });
+    }
+
+    if (btnRetryCamera) {
+      btnRetryCamera.addEventListener('click', () => {
+        if (modalCameraDenied) modalCameraDenied.classList.add('hidden');
+        startQrScanner();
+      });
+    }
+
+    if (btnCameraEnterPin) {
+      btnCameraEnterPin.addEventListener('click', () => {
+        if (modalCameraDenied) modalCameraDenied.classList.add('hidden');
+        resetPhonePin();
+        showScreen('pin');
+      });
+    }
+
+    // ── Phone Virtual PIN Keypad Logic ──
+    let enteredPhonePin = '';
+
+    function resetPhonePin() {
+      enteredPhonePin = '';
+      updatePhonePinBoxes();
+      if (pinEntryError) pinEntryError.textContent = '';
+    }
+
+    function updatePhonePinBoxes() {
+      const boxes = document.querySelectorAll('.phone-pin-box');
+      boxes.forEach((box, i) => {
+        box.textContent = enteredPhonePin[i] || '';
+        box.classList.toggle('active', i === enteredPhonePin.length);
+      });
+    }
+
+    if (phonePinKeypad) {
+      phonePinKeypad.addEventListener('click', (e) => {
+        const btn = e.target.closest('.phone-key-btn');
+        if (!btn) return;
+        const key = btn.dataset.key;
+        handlePhoneKey(key);
+      });
+    }
+
+    // Also support keyboard typing on phone PIN screen
+    document.addEventListener('keydown', (e) => {
+      if (screenEnterPin && !screenEnterPin.classList.contains('hidden')) {
+        if (e.key >= '0' && e.key <= '9') {
+          handlePhoneKey(e.key);
+        } else if (e.key === 'Backspace') {
+          handlePhoneKey('backspace');
+        } else if (e.key === 'Enter') {
+          handlePhoneKey('submit');
+        }
+      }
+    });
+
+    function handlePhoneKey(key) {
+      if (key >= '0' && key <= '9') {
+        triggerHaptic(30);
+        if (enteredPhonePin.length < 4) {
+          enteredPhonePin += key;
+          updatePhonePinBoxes();
+          if (pinEntryError) pinEntryError.textContent = '';
+          if (enteredPhonePin.length === 4) {
+            // Auto submit when 4th digit entered
+            setTimeout(() => submitPhonePin(), 120);
+          }
+        }
+      } else if (key === 'backspace') {
+        triggerHaptic(25);
+        if (enteredPhonePin.length > 0) {
+          enteredPhonePin = enteredPhonePin.slice(0, -1);
+          updatePhonePinBoxes();
+          if (pinEntryError) pinEntryError.textContent = '';
+        }
+      } else if (key === 'submit') {
+        triggerHaptic(45);
+        submitPhonePin();
+      }
+    }
+
+    function submitPhonePin() {
+      if (enteredPhonePin.length !== 4) {
+        if (pinEntryError) pinEntryError.textContent = 'Please enter a 4-digit PIN.';
+        return;
+      }
+      startStepConnection({ pin: enteredPhonePin });
+    }
+
+    // ── Dedicated QR Scanner (html5-qrcode) ──
+    let html5QrCode = null;
+    let isTorchOn = false;
+
+    async function startQrScanner() {
+      if (screenQrScanner) screenQrScanner.classList.remove('hidden');
+      if (modalInvalidQr) modalInvalidQr.classList.add('hidden');
+      if (modalCameraDenied) modalCameraDenied.classList.add('hidden');
+
+      try {
+        if (typeof Html5Qrcode === 'undefined') {
+          throw new Error('QR scanner library not loaded');
+        }
+
+        if (!html5QrCode) {
+          html5QrCode = new Html5Qrcode('qr-reader-video');
+        }
+
+        const config = {
+          fps: 15,
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrEdge = Math.max(180, Math.floor(minEdge * 0.72));
+            return { width: qrEdge, height: qrEdge };
+          },
+          aspectRatio: 1.0
+        };
+
+        await html5QrCode.start(
+          { facingMode: 'environment' },
+          config,
+          onScanSuccess,
+          onScanFailure
+        );
+        console.log('[Scanner] Camera scanner started.');
+      } catch (err) {
+        console.error('[Scanner] Camera error:', err);
+        if (screenQrScanner) screenQrScanner.classList.add('hidden');
+        if (modalCameraDenied) modalCameraDenied.classList.remove('hidden');
+      }
+    }
+
+    async function stopQrScanner() {
+      if (html5QrCode && html5QrCode.isScanning) {
+        try {
+          await html5QrCode.stop();
+          console.log('[Scanner] Camera stopped.');
+        } catch (err) {
+          console.warn('[Scanner] Stop error:', err);
+        }
+      }
+      if (screenQrScanner) screenQrScanner.classList.add('hidden');
+    }
+
+    function onScanFailure(error) {
+      // Periodic scanning attempt without QR code in frame - ignored
+    }
+
+    function onScanSuccess(decodedText) {
+      console.log('[Scanner] Decoded QR:', decodedText);
+      triggerHaptic(60);
+      stopQrScanner();
+      processScannedText(decodedText);
+    }
+
+    // Flashlight / Torch toggle button
+    if (btnToggleFlash) {
+      btnToggleFlash.addEventListener('click', async () => {
+        triggerHaptic(30);
+        if (html5QrCode && html5QrCode.isScanning) {
+          try {
+            isTorchOn = !isTorchOn;
+            await html5QrCode.applyVideoConstraints({
+              advanced: [{ torch: isTorchOn }]
+            });
+            btnToggleFlash.style.color = isTorchOn ? '#fbbf24' : '#f1f5f9';
+          } catch (e) {
+            console.warn('[Torch] Flashlight not supported on this device/browser:', e);
+          }
+        }
+      });
+    }
+
+    function processScannedText(rawText) {
+      if (!rawText) {
+        if (modalInvalidQr) modalInvalidQr.classList.remove('hidden');
+        return;
+      }
+
+      let token = null;
+      let pin = null;
+
+      try {
+        const parsedUrl = new URL(rawText.trim(), window.location.origin);
+        token = parsedUrl.searchParams.get('session');
+        pin = parsedUrl.searchParams.get('pin');
+      } catch (_) {
+        if (/^[0-9a-fA-F-]{20,40}$/.test(rawText.trim())) {
+          token = rawText.trim();
+        } else if (/^\d{4}$/.test(rawText.trim())) {
+          pin = rawText.trim();
+        }
+      }
+
+      if (token) {
+        startStepConnection({ token });
+      } else if (pin) {
+        startStepConnection({ pin });
+      } else {
+        if (modalInvalidQr) modalInvalidQr.classList.remove('hidden');
+      }
+    }
+
+    // ── Step-By-Step Connecting & Synchronizing Flow ──
+    async function startStepConnection({ token, pin }) {
+      if (screenConnecting) screenConnecting.classList.remove('hidden');
+      if (modalInvalidQr) modalInvalidQr.classList.add('hidden');
+      if (modalCameraDenied) modalCameraDenied.classList.add('hidden');
+      if (btnGoToRemote) btnGoToRemote.classList.add('hidden');
+
+      connModalTitle.textContent = 'CONNECTING...';
+      connModalSub.textContent = 'Connecting to SmartBoard — Please wait a moment';
+      connIconBox.className = 'conn-pulse-icon-box';
+      connIconSvg.innerHTML = `<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>`;
+
+      indValidate.innerHTML = '<div class="step-spinner"></div>';
+      indJoin.innerHTML     = '<div class="step-spinner" style="opacity: 0.25;"></div>';
+      indSync.innerHTML     = '<div class="step-spinner" style="opacity: 0.25;"></div>';
+
+      try {
+        // Step 1: Validating session
+        await new Promise(r => setTimeout(r, 400));
+        let validatedPin = pin;
+        let page = 1;
+        let total = 1;
+
+        if (token) {
+          const res = await fetch(`${SERVER_URL}/api/session/validate/${encodeURIComponent(token.trim())}`);
+          if (!res.ok) {
+            throw new Error('Presentation session expired or invalid.');
+          }
+          const data = await res.json();
+          if (!data.ok || !data.pin) throw new Error('Invalid session response.');
+          validatedPin = data.pin;
+          page = data.currentPage || 1;
+          total = data.totalPages || 1;
+        } else {
+          const res = await fetch(`${SERVER_URL}/api/presentation/${encodeURIComponent(pin.trim())}`);
+          if (!res.ok) {
+            throw new Error('PIN not found on SmartBoard.');
+          }
+          const data = await res.json();
+          if (!data.ok || !data.pin) throw new Error('Invalid PIN response.');
+          page = data.currentPage || 1;
+          total = data.totalPages || 1;
+        }
+
+        indValidate.innerHTML = '<span class="step-check">✓</span>';
+        indJoin.innerHTML     = '<div class="step-spinner"></div>';
+
+        // Step 2: Joining presentation
+        await new Promise(r => setTimeout(r, 380));
+        initRemoteScreen(validatedPin, page, total);
+        indJoin.innerHTML = '<span class="step-check">✓</span>';
+        indSync.innerHTML = '<div class="step-spinner"></div>';
+
+        // Step 3: Synchronizing
+        await new Promise(r => setTimeout(r, 350));
+        indSync.innerHTML = '<span class="step-check">✓</span>';
+
+        // Success state
+        connModalTitle.textContent = 'SMARTBOARD CONNECTED';
+        connModalSub.textContent = 'You can now control the presentation.';
+        connIconBox.className = 'conn-pulse-icon-box success';
+        connIconSvg.innerHTML = '<polyline points="20 6 9 17 4 12" stroke-width="2.8" stroke="#10b981" />';
+
+        setTimeout(() => {
+          if (screenConnecting) screenConnecting.classList.add('hidden');
+          showScreen('remote');
+        }, 750);
+
+      } catch (err) {
+        console.error('[Step Connection Error]:', err);
+        if (screenConnecting) screenConnecting.classList.add('hidden');
+        if (token) {
+          if (modalInvalidQr) modalInvalidQr.classList.remove('hidden');
+        } else {
+          if (pinEntryError) pinEntryError.textContent = err.message || 'Could not connect to PIN.';
+          showScreen('pin');
+        }
+      }
+    }
 
     // ── State ──
     let socket       = null;
@@ -1258,8 +2482,24 @@
       } else if (state === 'offline') {
         connStatus.classList.add('offline');
         connLabel.textContent = 'Offline';
+      } else if (state === 'board-disconnected') {
+        connStatus.classList.add('offline');
+        connLabel.textContent = 'Board disconnected';
       }
     }
+
+    window.addEventListener('online', () => {
+      if (socket && socket.connected) {
+        setConnectionStatus('connected');
+        if (currentPin) socket.emit('join-room', { pin: currentPin, role: 'phone' });
+      } else {
+        setConnectionStatus('reconnecting');
+      }
+    });
+
+    window.addEventListener('offline', () => {
+      setConnectionStatus('offline');
+    });
 
     // ── Slide info display ──
     function updateSlideInfo() {
@@ -1313,11 +2553,32 @@
         setConnectionStatus(!navigator.onLine ? 'offline' : 'reconnecting');
       });
 
+      // Board status update (board connected / board disconnected)
+      socket.on('board-status', (data) => {
+        if (data) {
+          if (data.connected === false) {
+            setConnectionStatus('board-disconnected');
+          } else if (data.connected === true && socket.connected) {
+            setConnectionStatus('connected');
+          }
+        }
+      });
+
+      // Fullscreen status update from presentation board
+      socket.on('fullscreen-status', (data) => {
+        if (data && fullscreenBtnLabel) {
+          fullscreenBtnLabel.textContent = data.isFullscreen ? 'Exit Full Screen' : 'Full Screen';
+        }
+      });
+
       // Room status: authoritative synchronization from server
       socket.on('room-status', (data) => {
         if (data && data.ok) {
           if (data.currentPage !== undefined) currentSlide = data.currentPage;
           if (data.totalPages !== undefined) totalSlides = data.totalPages;
+          if (data.boardConnected === false) {
+            setConnectionStatus('board-disconnected');
+          }
           updateSlideInfo();
           if (currentPin) saveSession(currentPin, currentSlide, totalSlides);
         } else if (data && data.error && currentPin) {
@@ -1528,6 +2789,17 @@
       triggerHaptic(25);
       if (socket && currentPin) socket.emit('zoom-command', { pin: currentPin, action: 'reset' });
     });
+
+    // ── Fullscreen ──
+    if (btnFullscreen) {
+      btnFullscreen.addEventListener('click', () => {
+        triggerHaptic(30);
+        if (socket && currentPin) {
+          socket.emit('request-fullscreen', { pin: currentPin, action: 'toggle' });
+          socket.emit('fullscreen-command', { pin: currentPin, action: 'toggle' });
+        }
+      });
+    }
 
     // ── Screen Wake Lock (Keep Screen On) ──
     // Uses the native Screen Wake Lock API — SSR/React/Next.js compatible.
@@ -1771,22 +3043,21 @@
       currentPin   = null;
       currentSlide = 1;
       totalSlides  = 1;
-      // Reset SmartBoard controls button state for next session
       updateToggleCtrlBtn(true);
-      screenRemote.classList.add('hidden');
-      screenUpload.classList.remove('hidden');
+      resetPhonePin();
+      showScreen('pairing');
       fileInput.value = '';
       progressBar.style.display = 'none';
       progressFill.style.width = '0%';
       setStatus('Ready for file selection.');
     }
 
-    // ── Upload another (soft reset) ──
+    // ── Upload another / Pair another (soft reset) ──
     btnReset.addEventListener('click', () => {
       clearSession();
       currentPin = null;
-      screenRemote.classList.add('hidden');
-      screenUpload.classList.remove('hidden');
+      resetPhonePin();
+      showScreen('pairing');
       fileInput.value = '';
       progressBar.style.display = 'none';
       progressFill.style.width = '0%';
@@ -1843,16 +3114,32 @@
       setConnectionStatus('offline');
     });
 
-    // ── Auto-Restore Session on Page Load ──
-    (function restoreActiveSessionOnLoad() {
+    // ── Auto-Pair via URL QR Session Token or Restore Session on Page Load ──
+    async function initPageSession() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionToken = urlParams.get('session');
+      const pinParam = urlParams.get('pin');
+
+      if (sessionToken) {
+        startStepConnection({ token: sessionToken.trim() });
+        return;
+      } else if (pinParam && /^\d{4}$/.test(pinParam.trim())) {
+        startStepConnection({ pin: pinParam.trim() });
+        return;
+      }
+
       const saved = getSavedSession();
       if (saved) {
         console.log('[Restoring Presentation Session] PIN:', saved.pin, 'Slide:', saved.slide);
         initRemoteScreen(saved.pin, saved.slide, saved.total);
+        showScreen('remote');
       } else {
+        showScreen('pairing');
         initSocket();
       }
-    })();
+    }
+
+    initPageSession();
 
     // ── Live Clock & Date ──
     function updateLiveClock() {
