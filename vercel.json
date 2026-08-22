@@ -13,10 +13,9 @@
     }
   ],
   "rewrites": [
-    { "source": "/board", "destination": "/public/board.html" },
-    { "source": "/board.html", "destination": "/public/board.html" },
-    { "source": "/remote", "destination": "/public/index.html" },
-    { "source": "/", "destination": "/public/index.html" },
-    { "source": "/((?!api/).*)", "destination": "/public/index.html" }
+    { "source": "/",           "destination": "/public/index.html" },
+    { "source": "/remote",     "destination": "/public/index.html" },
+    { "source": "/board",      "destination": "/public/board.html" },
+    { "source": "/board.html", "destination": "/public/board.html" }
   ]
 }

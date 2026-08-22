@@ -41,20 +41,32 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 
-// Enable CORS for all origins
+// ─── CORS allowed origins ────────────────────────────────────────────────────
+// FRONTEND_URL env var: the Vercel (or any external) frontend origin.
+// Accepts a comma-separated list so multiple preview deployments can be added.
+// Falls back to '*' (permit all) when not set — safe for local development.
+function buildAllowedOrigins() {
+  const raw = (process.env.FRONTEND_URL || '').trim();
+  if (!raw) return '*';                          // local dev: allow all
+  return raw.split(',').map(o => o.trim()).filter(Boolean);
+}
+const ALLOWED_ORIGINS = buildAllowedOrigins();
+
 app.use(cors({
-  origin: '*',
+  origin: ALLOWED_ORIGINS,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: false
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Socket.io initialization with open CORS
+// Socket.io initialization — CORS mirrors the express CORS config
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST'],
+    credentials: false
   },
   transports: ['polling', 'websocket'],
   pingInterval: 25000,
