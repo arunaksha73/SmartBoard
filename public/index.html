@@ -1160,10 +1160,54 @@
     </div>
   </footer>
 
-  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script>
-    // Explicit backend URL configuration
-    const SERVER_URL = window.location.origin;
+    if (typeof io === 'undefined') {
+      document.write('<script src="/socket.io/socket.io.js"><\/script>');
+    }
+  </script>
+  <script>
+    // Dynamic backend URL configuration (supports local, Render, Vercel, and custom env)
+    function getBackendUrl() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramUrl = urlParams.get('backend') || urlParams.get('server');
+        if (paramUrl) {
+          const parsed = new URL(paramUrl);
+          localStorage.setItem('smartboard_backend_url', parsed.origin);
+          return parsed.origin;
+        }
+      } catch (_) {}
+      const meta = document.querySelector('meta[name="backend-url"]');
+      if (meta && meta.content && meta.content.trim()) {
+        return meta.content.trim();
+      }
+      if (typeof window.SMARTBOARD_BACKEND_URL === 'string' && window.SMARTBOARD_BACKEND_URL.trim()) {
+        return window.SMARTBOARD_BACKEND_URL.trim();
+      }
+      if (typeof window.NEXT_PUBLIC_SOCKET_URL === 'string' && window.NEXT_PUBLIC_SOCKET_URL.trim()) {
+        return window.NEXT_PUBLIC_SOCKET_URL.trim();
+      }
+      const saved = localStorage.getItem('smartboard_backend_url');
+      if (saved && saved.trim()) {
+        return saved.trim();
+      }
+      return window.location.origin;
+    }
+
+    let SERVER_URL = getBackendUrl();
+
+    // Check /api/config asynchronously if not on localhost
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      fetch('/api/config')
+        .then(r => r.json())
+        .then(cfg => {
+          if (cfg && cfg.backendUrl && cfg.backendUrl.trim()) {
+            SERVER_URL = cfg.backendUrl.trim();
+          }
+        })
+        .catch(() => {});
+    }
 
     // ── DOM references ──
     const fileInput      = document.getElementById('fileInput');

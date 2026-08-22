@@ -30,6 +30,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { execFile, execFileSync } = require('child_process');
 const express = require('express');
 const http = require('http');
@@ -41,7 +42,11 @@ const app = express();
 const server = http.createServer(app);
 
 // Enable CORS for all origins
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -57,15 +62,24 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3000;
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
-const PUBLIC_DIR = path.join(__dirname, 'public');
+let UPLOAD_DIR = path.join(__dirname, 'uploads');
+let PUBLIC_DIR = path.join(__dirname, 'public');
 
 // Temp dir for LibreOffice conversion output (inside uploads, not publicly served directly)
-const CONVERT_TMP_DIR = path.join(UPLOAD_DIR, '_convert_tmp');
+let CONVERT_TMP_DIR = path.join(UPLOAD_DIR, '_convert_tmp');
 
-[UPLOAD_DIR, CONVERT_TMP_DIR].forEach(dir => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
+try {
+  [UPLOAD_DIR, CONVERT_TMP_DIR].forEach(dir => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  });
+} catch (e) {
+  // Read-only filesystem fallback (e.g. serverless /tmp or constrained environment)
+  UPLOAD_DIR = path.join(os.tmpdir(), 'smartboard_uploads');
+  CONVERT_TMP_DIR = path.join(UPLOAD_DIR, '_convert_tmp');
+  [UPLOAD_DIR, CONVERT_TMP_DIR].forEach(dir => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  });
+}
 
 // ─── Allowed file extensions & MIME types ──────────────────────────────────
 const ALLOWED_EXTENSIONS = new Set(['.pdf', '.ppt', '.pptx', '.doc', '.docx']);
@@ -377,7 +391,7 @@ const upload = multer({
  * Accepts PDF, PPT, PPTX, DOC, DOCX.
  * Converts non-PDF files to PDF via LibreOffice, then registers a room.
  */
-app.post('/upload', upload.single('pdf'), async (req, res) => {
+const handleUpload = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ ok: false, error: 'No file attached.' });
   }
@@ -449,7 +463,10 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
     silentUnlink(finalPath);
     return res.status(500).json({ ok: false, error: 'Could not save presentation file.' });
   }
-});
+};
+
+app.post('/upload', upload.single('pdf'), handleUpload);
+app.post('/api/upload', upload.single('pdf'), handleUpload);
 
 // If a client/platform somehow reaches /upload with anything but POST,
 // return a clear JSON diagnostic instead of a silent platform-level 405.
@@ -489,17 +506,41 @@ app.get('/api/presentation/:pin', (req, res) => {
   });
 });
 
-// Health check endpoint for Render platform monitoring and uptime checks
-app.get('/health', (req, res) => res.json({
-  status: 'ok',
-  ok: true,
-  service: 'smartboard-remote',
-  activeRooms: rooms.size,
-  libreOfficeAvailable,
-  sofficePath: SOFFICE_PATH || null,
-  uptime: Math.floor(process.uptime()),
-  timestamp: new Date().toISOString()
-}));
+// Health check handler for platform monitoring and uptime checks
+const handleHealth = (req, res) => {
+  try {
+    return res.json({
+      status: 'ok',
+      ok: true,
+      service: 'smartboard-remote',
+      activeRooms: rooms.size,
+      libreOfficeAvailable,
+      sofficePath: SOFFICE_PATH || null,
+      uptime: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: 'Health check failure' });
+  }
+};
+
+app.get('/health', handleHealth);
+app.get('/api/health', handleHealth);
+
+// Dynamic config endpoint to broadcast configured socket / backend URL
+app.get('/api/config', (req, res) => {
+  const backendUrl = (
+    process.env.BACKEND_URL ||
+    process.env.NEXT_PUBLIC_SOCKET_URL ||
+    process.env.SOCKET_URL ||
+    ''
+  ).trim();
+  res.json({
+    ok: true,
+    backendUrl,
+    env: process.env.NODE_ENV || 'production'
+  });
+});
 
 // ---------------------------------------------------------------------------
 // STATIC FILE SERVING
@@ -531,21 +572,21 @@ app.get('/favicon.ico', (req, res) => {
   res.sendFile(path.join(__dirname, 'favicon.png'));
 });
 
-// Serve UI Pages explicitly
+// Serve UI Pages explicitly (always from PUBLIC_DIR so the correct reverted files are used)
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
 app.get('/index.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
 app.get('/board', (req, res) => {
-  res.sendFile(path.join(__dirname, 'board.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'board.html'));
 });
 
 app.get('/board.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'board.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'board.html'));
 });
 
 // ---------------------------------------------------------------------------
@@ -733,7 +774,14 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Smartboard Remote server active on port ${PORT}`);
-  console.log(`[LibreOffice] Conversion available: ${libreOfficeAvailable}`);
-});
+if (require.main === module || !process.env.VERCEL) {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Smartboard Remote server active on port ${PORT}`);
+    console.log(`[LibreOffice] Conversion available: ${libreOfficeAvailable}`);
+  });
+}
+
+module.exports = app;
+module.exports.app = app;
+module.exports.server = server;
+module.exports.io = io;
