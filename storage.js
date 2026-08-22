@@ -1,12 +1,9 @@
 /**
- * storage.js — Google Drive Persistent Object Storage Abstraction
- * Uses the official Google Drive API v3 with Service Account authentication.
+ * storage.js — Google Drive Persistent Storage Module
+ * Official Google Drive API v3 with JWT Service Account Authentication
  *
- * Presentations are stored privately in your designated Google Drive folder:
- * (GOOGLE_DRIVE_FOLDER_ID = 1EDu-v1jwhKUC91vIj_CVeCD_HooSvepg)
- *
- * Survives all Render container restarts, redeployments, and instance replacements.
- * When Google credentials are not set, transparently falls back to local disk (uploads/).
+ * Folder ID: 1EDu-v1jwhKUC91vIj_CVeCD_HooSvepg
+ * Supports: GOOGLE_SERVICE_ACCOUNT_JSON OR (GOOGLE_SERVICE_ACCOUNT_EMAIL + GOOGLE_PRIVATE_KEY)
  */
 
 const fs = require('fs');
@@ -14,13 +11,13 @@ const fsp = fs.promises;
 const path = require('path');
 const { google } = require('googleapis');
 
-// ─── Environment Variables Resolution ────────────────────────────────────────
+// ─── Environment Variable Resolution ────────────────────────────────────────
 const GOOGLE_DRIVE_FOLDER_ID = (
   process.env.GOOGLE_DRIVE_FOLDER_ID ||
   '1EDu-v1jwhKUC91vIj_CVeCD_HooSvepg'
 ).trim();
 
-const GOOGLE_SERVICE_ACCOUNT_EMAIL = (
+let GOOGLE_SERVICE_ACCOUNT_EMAIL = (
   process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ||
   process.env.GOOGLE_CLIENT_EMAIL ||
   ''
@@ -31,35 +28,59 @@ let GOOGLE_PRIVATE_KEY = (
   ''
 ).trim();
 
-// Support full JSON credential block if provided via GOOGLE_SERVICE_ACCOUNT_JSON
+let initError = null;
+
+// Parse GOOGLE_SERVICE_ACCOUNT_JSON if provided
 if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
   try {
-    const parsed = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
-    if (parsed.client_email) {
-      if (!GOOGLE_SERVICE_ACCOUNT_EMAIL) {
-        GOOGLE_SERVICE_ACCOUNT_EMAIL = parsed.client_email;
-      }
+    let rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON.trim();
+    // Handle base64 encoded JSON if provided
+    if (!rawJson.startsWith('{') && !rawJson.startsWith('"')) {
+      try {
+        const decoded = Buffer.from(rawJson, 'base64').toString('utf8').trim();
+        if (decoded.startsWith('{')) {
+          rawJson = decoded;
+        }
+      } catch (_) {}
+    }
+    // Remove enclosing quotes if user wrapped the whole JSON string in quotes
+    if ((rawJson.startsWith('"') && rawJson.endsWith('"')) || (rawJson.startsWith("'") && rawJson.endsWith("'"))) {
+      rawJson = rawJson.slice(1, -1);
+    }
+
+    const parsed = JSON.parse(rawJson);
+    if (parsed.client_email && !GOOGLE_SERVICE_ACCOUNT_EMAIL) {
+      GOOGLE_SERVICE_ACCOUNT_EMAIL = parsed.client_email.trim();
     }
     if (parsed.private_key && !GOOGLE_PRIVATE_KEY) {
-      GOOGLE_PRIVATE_KEY = parsed.private_key;
+      GOOGLE_PRIVATE_KEY = parsed.private_key.trim();
     }
   } catch (err) {
-    console.warn('[Storage] Could not parse GOOGLE_SERVICE_ACCOUNT_JSON:', err.message);
+    initError = `Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON: ${err.message}`;
+    console.error(`[Storage] ${initError}`);
   }
 }
 
-// Clean up private key formatting (handles escaped \n in environment variables)
+// Format private key properly (convert escaped \\n to real \n)
 if (GOOGLE_PRIVATE_KEY) {
+  // Strip outer quotes if key was pasted with quotes
+  if ((GOOGLE_PRIVATE_KEY.startsWith('"') && GOOGLE_PRIVATE_KEY.endsWith('"')) ||
+      (GOOGLE_PRIVATE_KEY.startsWith("'") && GOOGLE_PRIVATE_KEY.endsWith("'"))) {
+    GOOGLE_PRIVATE_KEY = GOOGLE_PRIVATE_KEY.slice(1, -1);
+  }
   GOOGLE_PRIVATE_KEY = GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
 }
 
 let driveClient = null;
 let isStorageConfigured = false;
-// Fast in-memory cache: fileName -> Google Drive fileId
 const fileIdCache = new Map();
 
 if (GOOGLE_DRIVE_FOLDER_ID && GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
   try {
+    console.log('[Storage] Google Drive configuration detected');
+    console.log(`[Storage] Service account: ${GOOGLE_SERVICE_ACCOUNT_EMAIL}`);
+    console.log(`[Storage] Folder ID: ${GOOGLE_DRIVE_FOLDER_ID}`);
+
     const auth = new google.auth.JWT({
       email: GOOGLE_SERVICE_ACCOUNT_EMAIL,
       key: GOOGLE_PRIVATE_KEY,
@@ -71,31 +92,37 @@ if (GOOGLE_DRIVE_FOLDER_ID && GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY
 
     driveClient = google.drive({ version: 'v3', auth });
     isStorageConfigured = true;
-    console.log(`[Storage] Google Drive persistent storage active. Folder ID: "${GOOGLE_DRIVE_FOLDER_ID}"`);
+    console.log('[Storage] Google Drive persistent storage ACTIVE');
   } catch (err) {
-    console.error('[Storage] Failed to initialize Google Drive client:', err.message);
+    initError = `Google Drive client initialization failed: ${err.message}`;
+    console.error(`[Storage] ${initError}`);
     isStorageConfigured = false;
   }
 } else {
-  console.log('[Storage] Google Drive credentials not configured. Using local disk fallback (ideal for local dev).');
+  if (!initError) {
+    const missing = [];
+    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL) missing.push('GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_SERVICE_ACCOUNT_JSON');
+    if (!GOOGLE_PRIVATE_KEY) missing.push('GOOGLE_PRIVATE_KEY / GOOGLE_SERVICE_ACCOUNT_JSON');
+    if (!GOOGLE_DRIVE_FOLDER_ID) missing.push('GOOGLE_DRIVE_FOLDER_ID');
+    initError = `Missing required variables: ${missing.join(', ')}`;
+  }
+  console.log(`[Storage] ${initError}`);
+  console.log('[Storage] Using local-disk fallback (ideal for local dev).');
 }
 
 /**
- * Check if Google Drive persistent storage is active
+ * Check if Google Drive storage is active
  */
 function isConfigured() {
   return isStorageConfigured && driveClient !== null;
 }
 
 /**
- * Find a file in the Google Drive folder by exact filename
- * @param {string} fileName - e.g. "3872.pdf"
- * @returns {Promise<{id: string, name: string, size?: number, modifiedTime?: string}|null>}
+ * Find a file in Google Drive folder by exact filename
  */
 async function findFileByName(fileName) {
   if (!isConfigured()) return null;
 
-  // Check in-memory cache first
   const cachedId = fileIdCache.get(fileName);
   if (cachedId) {
     return { id: cachedId, name: fileName };
@@ -116,17 +143,13 @@ async function findFileByName(fileName) {
     }
     return null;
   } catch (err) {
-    console.warn(`[Storage] Google Drive lookup failed for "${fileName}":`, err.message);
+    console.warn(`[Storage] Google Drive file lookup error for "${fileName}":`, err.message);
     return null;
   }
 }
 
 /**
- * Upload a local presentation file to the private Google Drive folder
- * @param {string} localFilePath - Path to local file
- * @param {string} fileName      - Target filename (e.g. "3872.pdf")
- * @param {string} contentType   - MIME type (e.g. "application/pdf")
- * @returns {Promise<boolean>}
+ * Upload local presentation file to private Google Drive folder
  */
 async function uploadFile(localFilePath, fileName, contentType = 'application/pdf') {
   if (!isConfigured()) return true;
@@ -138,7 +161,6 @@ async function uploadFile(localFilePath, fileName, contentType = 'application/pd
       body: fs.createReadStream(localFilePath)
     };
 
-    // Check if file already exists in folder (update instead of duplicate)
     const existing = await findFileByName(fileName);
     let res;
 
@@ -158,7 +180,7 @@ async function uploadFile(localFilePath, fileName, contentType = 'application/pd
         media,
         fields: 'id, name, size'
       });
-      console.log(`[Storage] Uploaded to Google Drive folder: ${fileName} (ID: ${res.data.id}, ${(stats.size / (1024 * 1024)).toFixed(2)} MB)`);
+      console.log(`[Storage] Uploaded to Google Drive: ${fileName} (ID: ${res.data.id}, ${(stats.size / (1024 * 1024)).toFixed(2)} MB)`);
     }
 
     if (res && res.data && res.data.id) {
@@ -173,9 +195,7 @@ async function uploadFile(localFilePath, fileName, contentType = 'application/pd
 }
 
 /**
- * Check if a file exists in Google Drive without downloading it
- * @param {string} fileName - e.g. "3872.pdf"
- * @returns {Promise<{exists: boolean, size?: number, lastModified?: Date}>}
+ * Check if a file exists in Google Drive folder without downloading
  */
 async function headFile(fileName) {
   if (!isConfigured()) return { exists: false };
@@ -197,9 +217,6 @@ async function headFile(fileName) {
 
 /**
  * Download a file from Google Drive to a local file path
- * @param {string} fileName            - e.g. "3872.pdf"
- * @param {string} localDestinationPath - Destination on local disk
- * @returns {Promise<boolean>}
  */
 async function downloadFile(fileName, localDestinationPath) {
   if (!isConfigured()) return false;
@@ -217,7 +234,6 @@ async function downloadFile(fileName, localDestinationPath) {
 
     if (!res.data) return false;
 
-    // Ensure parent destination folder exists
     await fsp.mkdir(path.dirname(localDestinationPath), { recursive: true });
 
     await new Promise((resolve, reject) => {
@@ -237,8 +253,6 @@ async function downloadFile(fileName, localDestinationPath) {
 
 /**
  * Get a readable stream for a file from Google Drive
- * @param {string} fileName - e.g. "3872.pdf"
- * @returns {Promise<ReadableStream|null>}
  */
 async function getFileStream(fileName) {
   if (!isConfigured()) return null;
@@ -261,8 +275,6 @@ async function getFileStream(fileName) {
 
 /**
  * Delete a presentation file from Google Drive
- * @param {string} fileName - e.g. "3872.pdf"
- * @returns {Promise<boolean>}
  */
 async function deleteFile(fileName) {
   if (!isConfigured()) return true;
@@ -284,7 +296,6 @@ async function deleteFile(fileName) {
 
 /**
  * List all presentation files stored in the Google Drive folder
- * @returns {Promise<Array<{pin: string, filename: string, size: number, lastModified: Date}>>}
  */
 async function listPresentations() {
   if (!isConfigured()) return [];
@@ -328,5 +339,6 @@ module.exports = {
   getFileStream,
   deleteFile,
   listPresentations,
-  GOOGLE_DRIVE_FOLDER_ID
+  GOOGLE_DRIVE_FOLDER_ID,
+  getInitError: () => initError
 };
