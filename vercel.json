@@ -2,8 +2,6 @@
   "version": 2,
   "buildCommand": "node scripts/sync_public.js",
   "installCommand": "npm install",
-  "cleanUrls": true,
-  "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",
@@ -14,42 +12,11 @@
       ]
     }
   ],
-  "routes": [
-    {
-      "src": "/api/health",
-      "dest": "/api/health.js"
-    },
-    {
-      "src": "/api/config",
-      "dest": "/api/config.js"
-    },
-    {
-      "src": "/board",
-      "dest": "/public/board.html"
-    },
-    {
-      "src": "/board.html",
-      "dest": "/public/board.html"
-    },
-    {
-      "src": "/remote",
-      "dest": "/public/index.html"
-    },
-    {
-      "src": "/favicon.svg",
-      "dest": "/favicon.svg"
-    },
-    {
-      "src": "/favicon.png",
-      "dest": "/favicon.png"
-    },
-    {
-      "src": "/icon-192.png",
-      "dest": "/icon-192.png"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/index.html"
-    }
+  "rewrites": [
+    { "source": "/board", "destination": "/public/board.html" },
+    { "source": "/board.html", "destination": "/public/board.html" },
+    { "source": "/remote", "destination": "/public/index.html" },
+    { "source": "/", "destination": "/public/index.html" },
+    { "source": "/((?!api/).*)", "destination": "/public/index.html" }
   ]
 }
