@@ -1278,6 +1278,7 @@
   </div>
 
   <!-- PDF.js CDN -->
+  <script id="smartboard-config">window.SMARTBOARD_BACKEND_URL="https://smartboard-remote.onrender.com";</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script>
@@ -1292,7 +1293,6 @@
       (typeof window.SMARTBOARD_BACKEND_URL === 'string' && window.SMARTBOARD_BACKEND_URL.trim()) ||
       window.location.origin
     ).replace(/\/$/, '');
-  </script>
 
     // ── DOM references ──
     const pinOverlay          = document.getElementById('pinOverlay');

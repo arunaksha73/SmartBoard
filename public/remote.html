@@ -1160,6 +1160,7 @@
     </div>
   </footer>
 
+  <script id="smartboard-config">window.SMARTBOARD_BACKEND_URL="https://smartboard-remote.onrender.com";</script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script>
     // Resolve backend URL synchronously.
@@ -1170,7 +1171,6 @@
       (typeof window.SMARTBOARD_BACKEND_URL === 'string' && window.SMARTBOARD_BACKEND_URL.trim()) ||
       window.location.origin
     ).replace(/\/$/, '');
-  </script>
 
     // ── DOM references ──
     const fileInput      = document.getElementById('fileInput');
