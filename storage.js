@@ -1,9 +1,14 @@
 /**
- * storage.js — Google Drive Persistent Storage Module
- * Official Google Drive API v3 with JWT Service Account Authentication
+ * storage.js — Google Drive Persistent Storage Module (OAuth 2.0)
+ * Uses official Google Drive API v3 with User OAuth 2.0 & Refresh Token
+ * to store presentation files directly under your personal Google Drive 15GB quota.
  *
  * Folder ID: 1EDu-v1jwhKUC91vIj_CVeCD_HooSvepg
- * Supports: GOOGLE_SERVICE_ACCOUNT_JSON OR (GOOGLE_SERVICE_ACCOUNT_EMAIL + GOOGLE_PRIVATE_KEY)
+ * Environment Variables:
+ *   - GOOGLE_CLIENT_ID
+ *   - GOOGLE_CLIENT_SECRET
+ *   - GOOGLE_REFRESH_TOKEN
+ *   - GOOGLE_DRIVE_FOLDER_ID
  */
 
 const fs = require('fs');
@@ -17,95 +22,59 @@ const GOOGLE_DRIVE_FOLDER_ID = (
   '1EDu-v1jwhKUC91vIj_CVeCD_HooSvepg'
 ).trim();
 
-let GOOGLE_SERVICE_ACCOUNT_EMAIL = (
-  process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ||
-  process.env.GOOGLE_CLIENT_EMAIL ||
+const GOOGLE_CLIENT_ID = (
+  process.env.GOOGLE_CLIENT_ID ||
   ''
 ).trim();
 
-let GOOGLE_PRIVATE_KEY = (
-  process.env.GOOGLE_PRIVATE_KEY ||
+const GOOGLE_CLIENT_SECRET = (
+  process.env.GOOGLE_CLIENT_SECRET ||
   ''
 ).trim();
 
-let initError = null;
+const GOOGLE_REFRESH_TOKEN = (
+  process.env.GOOGLE_REFRESH_TOKEN ||
+  ''
+).trim();
 
-// Parse GOOGLE_SERVICE_ACCOUNT_JSON if provided
-if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
-  try {
-    let rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON.trim();
-    // Handle base64 encoded JSON if provided
-    if (!rawJson.startsWith('{') && !rawJson.startsWith('"')) {
-      try {
-        const decoded = Buffer.from(rawJson, 'base64').toString('utf8').trim();
-        if (decoded.startsWith('{')) {
-          rawJson = decoded;
-        }
-      } catch (_) {}
-    }
-    // Remove enclosing quotes if user wrapped the whole JSON string in quotes
-    if ((rawJson.startsWith('"') && rawJson.endsWith('"')) || (rawJson.startsWith("'") && rawJson.endsWith("'"))) {
-      rawJson = rawJson.slice(1, -1);
-    }
-
-    const parsed = JSON.parse(rawJson);
-    if (parsed.client_email && !GOOGLE_SERVICE_ACCOUNT_EMAIL) {
-      GOOGLE_SERVICE_ACCOUNT_EMAIL = parsed.client_email.trim();
-    }
-    if (parsed.private_key && !GOOGLE_PRIVATE_KEY) {
-      GOOGLE_PRIVATE_KEY = parsed.private_key.trim();
-    }
-  } catch (err) {
-    initError = `Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON: ${err.message}`;
-    console.error(`[Storage] ${initError}`);
-  }
-}
-
-// Format private key properly (convert escaped \\n to real \n)
-if (GOOGLE_PRIVATE_KEY) {
-  // Strip outer quotes if key was pasted with quotes
-  if ((GOOGLE_PRIVATE_KEY.startsWith('"') && GOOGLE_PRIVATE_KEY.endsWith('"')) ||
-      (GOOGLE_PRIVATE_KEY.startsWith("'") && GOOGLE_PRIVATE_KEY.endsWith("'"))) {
-    GOOGLE_PRIVATE_KEY = GOOGLE_PRIVATE_KEY.slice(1, -1);
-  }
-  GOOGLE_PRIVATE_KEY = GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
-}
-
+let oauth2Client = null;
 let driveClient = null;
 let isStorageConfigured = false;
+let initError = null;
+
+// In-memory cache for fast fileName -> Google Drive fileId mapping
 const fileIdCache = new Map();
 
-if (GOOGLE_DRIVE_FOLDER_ID && GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
+if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_REFRESH_TOKEN) {
   try {
-    console.log('[Storage] Google Drive configuration detected');
-    console.log(`[Storage] Service account: ${GOOGLE_SERVICE_ACCOUNT_EMAIL}`);
+    console.log('[Storage] Google Drive OAuth configuration detected');
+    console.log('[Storage] Google account storage active');
     console.log(`[Storage] Folder ID: ${GOOGLE_DRIVE_FOLDER_ID}`);
 
-    const auth = new google.auth.JWT({
-      email: GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: GOOGLE_PRIVATE_KEY,
-      scopes: [
-        'https://www.googleapis.com/auth/drive.file',
-        'https://www.googleapis.com/auth/drive'
-      ]
+    oauth2Client = new google.auth.OAuth2(
+      GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET,
+      'https://developers.google.com/oauthplayground'
+    );
+
+    oauth2Client.setCredentials({
+      refresh_token: GOOGLE_REFRESH_TOKEN
     });
 
-    driveClient = google.drive({ version: 'v3', auth });
+    driveClient = google.drive({ version: 'v3', auth: oauth2Client });
     isStorageConfigured = true;
     console.log('[Storage] Google Drive persistent storage ACTIVE');
   } catch (err) {
-    initError = `Google Drive client initialization failed: ${err.message}`;
+    initError = `Google Drive OAuth initialization failed: ${err.message}`;
     console.error(`[Storage] ${initError}`);
     isStorageConfigured = false;
   }
 } else {
-  if (!initError) {
-    const missing = [];
-    if (!GOOGLE_SERVICE_ACCOUNT_EMAIL) missing.push('GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_SERVICE_ACCOUNT_JSON');
-    if (!GOOGLE_PRIVATE_KEY) missing.push('GOOGLE_PRIVATE_KEY / GOOGLE_SERVICE_ACCOUNT_JSON');
-    if (!GOOGLE_DRIVE_FOLDER_ID) missing.push('GOOGLE_DRIVE_FOLDER_ID');
-    initError = `Missing required variables: ${missing.join(', ')}`;
-  }
+  const missing = [];
+  if (!GOOGLE_CLIENT_ID) missing.push('GOOGLE_CLIENT_ID');
+  if (!GOOGLE_CLIENT_SECRET) missing.push('GOOGLE_CLIENT_SECRET');
+  if (!GOOGLE_REFRESH_TOKEN) missing.push('GOOGLE_REFRESH_TOKEN');
+  initError = `Missing required OAuth variables: ${missing.join(', ')}`;
   console.log(`[Storage] ${initError}`);
   console.log('[Storage] Using local-disk fallback (ideal for local dev).');
 }
@@ -149,7 +118,7 @@ async function findFileByName(fileName) {
 }
 
 /**
- * Upload local presentation file to private Google Drive folder
+ * Upload local presentation file to private Google Drive folder using personal account quota
  */
 async function uploadFile(localFilePath, fileName, contentType = 'application/pdf') {
   if (!isConfigured()) return true;
