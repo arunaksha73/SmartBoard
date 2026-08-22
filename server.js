@@ -1,23 +1,19 @@
 /**
- * Smartboard Remote — server.js (High Performance & Production Optimized)
+ * Smartboard Remote — server.js (Persistent Storage & High Performance)
  * Express + Socket.io Backend for Render.com & Local Deployments
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * ARCHITECTURE & PERFORMANCE OPTIMIZATIONS
+ * PERSISTENT STORAGE ARCHITECTURE
  * ─────────────────────────────────────────────────────────────────────────────
- * 1. ZERO-BLOCKING ASYNC I/O: All filesystem operations use fs.promises / async
- *    streams so the Node.js event loop remains 100% responsive under heavy load.
- * 2. STREAMED MULTIPART UPLOADS: Uploads stream directly to disk with zero RAM buffering.
- * 3. ZERO-COPY PDF STORAGE: PDFs are written directly to their final destination,
- *    eliminating secondary rename/copy overhead.
- * 4. ISOLATED LIBREOFFICE WORKER QUEUE: Document conversions run in a bounded FIFO
- *    queue with isolated user profiles (-env:UserInstallation) to prevent multi-instance
- *    profile collisions, lockouts, and Out-of-Memory (OOM) crashes on Render Free Tier.
- * 5. LOW-LATENCY SOCKET.IO: Control packets run without per-message deflate overhead,
- *    delivering sub-millisecond slide transitions across phone and board.
- * 6. STATIC & UPLOAD CACHING: HTTP ETag + Cache-Control headers ensure fast PDF delivery
- *    and efficient browser caching.
- * 7. AUTOMATIC ASYNC TTL CLEANUP: Expired presentations are pruned in the background.
+ * - S3-COMPATIBLE OBJECT STORAGE: Presentations are saved to persistent object
+ *   storage (Cloudflare R2, AWS S3, Supabase, B2, MinIO) when configured.
+ * - RECOVERY AFTER RESTART: Even after Render restarts, redeploys, or replaces
+ *   the instance, presentations and PIN sessions are automatically restored
+ *   from persistent object storage.
+ * - LOCAL DEV FALLBACK: When storage credentials are not provided, gracefully
+ *   falls back to local disk storage (zero configuration needed for local dev).
+ * - HYBRID STREAMED CACHE: Files are served through local disk cache with HTTP
+ *   ETag and Range headers, downloading on-demand from object storage if needed.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -32,6 +28,9 @@ const cors = require('cors');
 const multer = require('multer');
 const { Server } = require('socket.io');
 
+// Persistent Object Storage Provider
+const storage = require('./storage');
+
 const app = express();
 const server = http.createServer(app);
 
@@ -39,8 +38,6 @@ const server = http.createServer(app);
 app.disable('x-powered-by');
 
 // ─── CORS Configuration ──────────────────────────────────────────────────────
-// FRONTEND_URL env var: Allowed Vercel / frontend origins (comma-separated).
-// Falls back to '*' for local development.
 function buildAllowedOrigins() {
   const raw = (process.env.FRONTEND_URL || '').trim();
   if (!raw) return '*';
@@ -65,10 +62,9 @@ const io = new Server(server, {
     credentials: false
   },
   transports: ['polling', 'websocket'],
-  // Disable perMessageDeflate for tiny control events to reduce CPU load and latency
   perMessageDeflate: false,
   httpCompression: false,
-  maxHttpBufferSize: 1e6, // 1MB max payload per socket message
+  maxHttpBufferSize: 1e6, // 1MB
   pingInterval: 25000,
   pingTimeout: 60000
 });
@@ -78,13 +74,12 @@ let UPLOAD_DIR = path.join(__dirname, 'uploads');
 let PUBLIC_DIR = path.join(__dirname, 'public');
 let CONVERT_TMP_DIR = path.join(UPLOAD_DIR, '_convert_tmp');
 
-// Ensure directories exist safely on startup
+// Ensure local cache directories exist safely on startup
 try {
   [UPLOAD_DIR, CONVERT_TMP_DIR].forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   });
 } catch (e) {
-  // Read-only filesystem fallback (e.g. serverless /tmp or constrained environment)
   UPLOAD_DIR = path.join(os.tmpdir(), 'smartboard_uploads');
   CONVERT_TMP_DIR = path.join(UPLOAD_DIR, '_convert_tmp');
   [UPLOAD_DIR, CONVERT_TMP_DIR].forEach(dir => {
@@ -101,14 +96,12 @@ let SOFFICE_PATH = process.env.LIBREOFFICE_PATH || null;
 let libreOfficeAvailable = false;
 
 function detectLibreOffice() {
-  // 1. Explicit environment variable
   if (SOFFICE_PATH && fs.existsSync(SOFFICE_PATH)) {
     libreOfficeAvailable = true;
     console.log(`[LibreOffice] Found via LIBREOFFICE_PATH: ${SOFFICE_PATH}`);
     return;
   }
 
-  // 2. Linux standard paths (Docker / Render / Linux Server)
   const linuxPaths = [
     '/usr/bin/soffice',
     '/usr/bin/libreoffice',
@@ -124,7 +117,6 @@ function detectLibreOffice() {
     }
   }
 
-  // 3. Windows standard paths (Local Development)
   const windowsPaths = [
     'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
     'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',
@@ -138,7 +130,6 @@ function detectLibreOffice() {
     }
   }
 
-  // 4. PATH lookup fallback
   try {
     const cmd = process.platform === 'win32' ? 'where' : 'which';
     const result = execFileSync(cmd, ['soffice'], { encoding: 'utf8', timeout: 3000 }).trim();
@@ -180,7 +171,7 @@ async function silentUnlink(filePath) {
     await fsp.unlink(filePath);
   } catch (err) {
     if (err.code !== 'ENOENT') {
-      // Ignore missing file errors silently
+      // Ignore missing files
     }
   }
 }
@@ -190,7 +181,6 @@ async function safeMove(src, dest) {
     await fsp.rename(src, dest);
   } catch (err) {
     if (err.code === 'EXDEV') {
-      // Cross-device move fallback
       await fsp.copyFile(src, dest);
       await silentUnlink(src);
     } else {
@@ -216,19 +206,22 @@ function generatePin() {
   return pin;
 }
 
-// Fast O(1) in-memory lookup with graceful disk fallback
-function getOrRestoreRoom(pin) {
+// Async presentation lookup: Memory -> Local Cache -> Persistent S3 Storage
+async function getOrRestoreRoom(pin) {
   if (!isValidPin(pin)) return null;
   const pinStr = String(pin).trim();
+
+  // 1. Instant in-memory lookup
   let room = rooms.get(pinStr);
   if (room) return room;
 
-  // Disk fallback if server restarted with active files
   const finalFilename = `${pinStr}.pdf`;
-  const finalPath = path.join(UPLOAD_DIR, finalFilename);
-  if (fs.existsSync(finalPath)) {
+  const localPath = path.join(UPLOAD_DIR, finalFilename);
+
+  // 2. Check local disk cache
+  if (fs.existsSync(localPath)) {
     try {
-      const stats = fs.statSync(finalPath);
+      const stats = await fsp.stat(localPath);
       room = {
         pin: pinStr,
         filename: finalFilename,
@@ -239,54 +232,107 @@ function getOrRestoreRoom(pin) {
         hasPhoneConnected: false
       };
       rooms.set(pinStr, room);
+      console.log(`[Session] Restored PIN from local cache: ${pinStr}`);
       return room;
     } catch (_) {}
   }
+
+  // 3. Check persistent object storage (survives Render restart / redeploy)
+  if (storage.isConfigured()) {
+    try {
+      const head = await storage.headFile(finalFilename);
+      if (head.exists) {
+        room = {
+          pin: pinStr,
+          filename: finalFilename,
+          pdfUrl: `/uploads/${finalFilename}`,
+          currentPage: 1,
+          totalPages: 1,
+          createdAt: head.lastModified ? head.lastModified.getTime() : Date.now(),
+          hasPhoneConnected: false
+        };
+        rooms.set(pinStr, room);
+        console.log(`[Session] Restored PIN from persistent S3 storage: ${pinStr}`);
+        return room;
+      }
+    } catch (err) {
+      console.warn(`[Storage] Check failed for PIN ${pinStr}:`, err.message);
+    }
+  }
+
   return null;
 }
 
-// Non-blocking async room scan on startup
+// Non-blocking async room scan on startup (both local and S3 storage)
 async function scanAndRestoreExistingRooms() {
+  // 1. Scan persistent S3 storage first if configured
+  if (storage.isConfigured()) {
+    try {
+      const remoteList = await storage.listPresentations();
+      for (const item of remoteList) {
+        if (!rooms.has(item.pin)) {
+          rooms.set(item.pin, {
+            pin: item.pin,
+            filename: item.filename,
+            pdfUrl: `/uploads/${item.filename}`,
+            currentPage: 1,
+            totalPages: 1,
+            createdAt: item.lastModified ? item.lastModified.getTime() : Date.now(),
+            hasPhoneConnected: false
+          });
+        }
+      }
+      if (remoteList.length > 0) {
+        console.log(`[Startup] Restored ${remoteList.length} presentation(s) from persistent S3 storage.`);
+      }
+    } catch (e) {
+      console.warn('[Startup] Could not list from S3 storage:', e.message);
+    }
+  }
+
+  // 2. Scan local disk cache
   try {
     const files = await fsp.readdir(UPLOAD_DIR);
     const pdfFiles = files.filter(f => /^(\d{4})\.pdf$/.test(f));
     await Promise.all(pdfFiles.map(async f => {
       const pin = f.match(/^(\d{4})\.pdf$/)[1];
-      const filePath = path.join(UPLOAD_DIR, f);
-      try {
-        const stats = await fsp.stat(filePath);
-        rooms.set(pin, {
-          pin,
-          filename: f,
-          pdfUrl: `/uploads/${f}`,
-          currentPage: 1,
-          totalPages: 1,
-          createdAt: stats.mtimeMs || Date.now(),
-          hasPhoneConnected: false
-        });
-      } catch (_) {}
+      if (!rooms.has(pin)) {
+        const filePath = path.join(UPLOAD_DIR, f);
+        try {
+          const stats = await fsp.stat(filePath);
+          rooms.set(pin, {
+            pin,
+            filename: f,
+            pdfUrl: `/uploads/${f}`,
+            currentPage: 1,
+            totalPages: 1,
+            createdAt: stats.mtimeMs || Date.now(),
+            hasPhoneConnected: false
+          });
+        } catch (_) {}
+      }
     }));
-    if (rooms.size > 0) {
-      console.log(`[Startup] Loaded ${rooms.size} active presentation session(s) from storage.`);
-    }
   } catch (_) {}
 }
 
 scanAndRestoreExistingRooms();
 
-// Asynchronous room cleanup
+// Asynchronous room cleanup (local cache + persistent storage)
 async function cleanupRoom(pin) {
   const pinStr = String(pin).trim();
   const room = rooms.get(pinStr);
   rooms.delete(pinStr);
-  if (room && room.filename) {
-    await silentUnlink(path.join(UPLOAD_DIR, room.filename));
-  } else {
-    await silentUnlink(path.join(UPLOAD_DIR, `${pinStr}.pdf`));
+
+  const filename = room && room.filename ? room.filename : `${pinStr}.pdf`;
+  await silentUnlink(path.join(UPLOAD_DIR, filename));
+
+  // Only delete from persistent storage when explicitly exiting session
+  if (storage.isConfigured()) {
+    await storage.deleteFile(filename);
   }
 }
 
-// Non-blocking TTL cleanup every 10 minutes (TTL: 2 hours)
+// Background TTL cleanup (2 hours)
 const ROOM_TTL_MS = 2 * 60 * 60 * 1000;
 setInterval(async () => {
   const now = Date.now();
@@ -297,13 +343,12 @@ setInterval(async () => {
     }
   }
   for (const pin of toClean) {
-    console.log(`[Session] Auto-expired PIN: ${pin}`);
+    console.log(`[Session] Expired session: ${pin}`);
     await cleanupRoom(pin);
   }
-}, 10 * 60 * 1000).unref(); // unref so timer doesn't hold process open unnecessarily
+}, 10 * 60 * 1000).unref();
 
 // ─── Bounded FIFO LibreOffice Worker Queue ──────────────────────────────────
-// Ensures conversion processes never starve CPU or cause memory spikes on Render Free Tier.
 class ConversionQueue {
   constructor(concurrency = 1) {
     this.concurrency = concurrency;
@@ -333,19 +378,14 @@ class ConversionQueue {
   }
 }
 
-const conversionQueue = new ConversionQueue(1); // 1 concurrent conversion for optimal memory safety
+const conversionQueue = new ConversionQueue(1);
 
-/**
- * Convert a document to PDF using LibreOffice headless mode.
- * Uses isolated temporary user profile to guarantee zero cross-process locking.
- */
 function convertToPDF(inputPath, outputDir) {
   return conversionQueue.enqueue(async () => {
     if (!libreOfficeAvailable || !SOFFICE_PATH) {
       throw new Error('LibreOffice is not installed on this server. Please upload a PDF.');
     }
 
-    // Create an isolated profile directory in /tmp for this conversion
     const profileDir = path.join(os.tmpdir(), `lo_profile_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
     try {
       await fsp.mkdir(profileDir, { recursive: true });
@@ -390,26 +430,21 @@ function convertToPDF(inputPath, outputDir) {
       return convertedPath;
 
     } finally {
-      // Asynchronously clean up the temporary user profile
       fsp.rm(profileDir, { recursive: true, force: true }).catch(() => {});
     }
   });
 }
 
 // ─── Streamed Multer Storage Setup ──────────────────────────────────────────
-// Stream directly to disk:
-// - PDFs stream directly into UPLOAD_DIR with their final PIN name (zero file moving!)
-// - Convertibles (.pptx, .docx) stream to CONVERT_TMP_DIR for processing.
-const storage = multer.diskStorage({
+const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const origExt = path.extname(file.originalname || '').toLowerCase();
-    // PDFs go directly to final upload folder; non-PDFs to conversion temp folder
     cb(null, origExt === '.pdf' ? UPLOAD_DIR : CONVERT_TMP_DIR);
   },
   filename: (req, file, cb) => {
     const origExt = path.extname(file.originalname || '').toLowerCase();
     const pin = generatePin();
-    req.generatedPin = pin; // Store generated PIN on request object
+    req.generatedPin = pin;
     if (origExt === '.pdf') {
       cb(null, `${pin}.pdf`);
     } else {
@@ -419,8 +454,8 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-  storage,
-  limits: { fileSize: 150 * 1024 * 1024 }, // 150MB maximum
+  storage: diskStorage,
+  limits: { fileSize: 150 * 1024 * 1024 }, // 150MB
   fileFilter: (req, file, cb) => {
     const origExt = path.extname(file.originalname || '').toLowerCase();
     if (!ALLOWED_EXTENSIONS.has(origExt)) {
@@ -431,7 +466,7 @@ const upload = multer({
   }
 });
 
-// ─── High-Performance Upload Handler ────────────────────────────────────────
+// ─── Upload Handler (Persistent Storage Integrated) ─────────────────────────
 const handleUpload = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ ok: false, error: 'No presentation file attached.' });
@@ -445,8 +480,8 @@ const handleUpload = async (req, res) => {
 
   try {
     if (origExt === '.pdf') {
-      // ZERO-COPY PATH: PDF was written directly to finalPath by Multer stream!
-      console.log(`[Upload] PDF streamed directly to destination. PIN: ${pin}`);
+      // PDF streamed directly to local destination
+      console.log(`[Upload] PDF streamed to local cache. PIN: ${pin}`);
     } else {
       // Non-PDF conversion path
       if (!libreOfficeAvailable) {
@@ -465,10 +500,15 @@ const handleUpload = async (req, res) => {
         return res.status(422).json({ ok: false, error: convErr.message });
       }
 
-      // Move converted PDF to final destination asynchronously
       await safeMove(convertedPath, finalPath);
-      // Clean up original raw upload asynchronously
       silentUnlink(uploadedPath);
+    }
+
+    // Persist to S3-compatible object storage asynchronously
+    if (storage.isConfigured()) {
+      storage.uploadFile(finalPath, finalFilename, 'application/pdf').catch(err => {
+        console.error(`[Storage] Background upload failed for PIN ${pin}:`, err);
+      });
     }
 
     const pdfUrl = `/uploads/${finalFilename}`;
@@ -517,9 +557,9 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Presentation Session Lookup ────────────────────────────────────────────
-app.get('/api/presentation/:pin', (req, res) => {
+app.get('/api/presentation/:pin', async (req, res) => {
   const { pin } = req.params;
-  const room = getOrRestoreRoom(pin);
+  const room = await getOrRestoreRoom(pin);
   if (!room) {
     return res.status(404).json({ ok: false, error: 'Invalid or expired presentation PIN.' });
   }
@@ -540,6 +580,11 @@ const handleHealth = (req, res) => {
       ok: true,
       service: 'smartboard-remote',
       activeRooms: rooms.size,
+      storage: {
+        persistent: storage.isConfigured(),
+        provider: storage.isConfigured() ? 's3-compatible' : 'local-disk',
+        bucket: storage.STORAGE_BUCKET || null
+      },
       libreOfficeAvailable,
       sofficePath: SOFFICE_PATH || null,
       uptime: Math.floor(process.uptime()),
@@ -568,8 +613,29 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-// ─── Cached Static File & Presentation Serving ──────────────────────────────
-// Serves PDFs with HTTP caching headers to accelerate board slide rendering
+// ─── Persistent PDF Delivery & On-Demand Restore ────────────────────────────
+// If a file is not in local disk cache (e.g. after Render restart), restore from S3!
+app.get('/uploads/:filename', async (req, res, next) => {
+  const filename = path.basename(req.params.filename);
+  const localPath = path.join(UPLOAD_DIR, filename);
+
+  // 1. If present in local cache, let express.static stream it
+  if (fs.existsSync(localPath)) {
+    return next();
+  }
+
+  // 2. If missing locally, restore from persistent S3 storage
+  if (storage.isConfigured()) {
+    const downloaded = await storage.downloadFile(filename, localPath);
+    if (downloaded) {
+      return next();
+    }
+  }
+
+  return res.status(404).send('Presentation file not found or expired.');
+});
+
+// Serve cached PDFs with HTTP ETag & Cache-Control headers
 app.use('/uploads', express.static(UPLOAD_DIR, {
   maxAge: '1d',
   etag: true,
@@ -584,7 +650,7 @@ app.use(express.static(PUBLIC_DIR, {
   etag: true
 }));
 
-// Favicon & Static Assets
+// Static Assets
 app.get('/favicon.svg', (req, res) => {
   res.setHeader('Content-Type', 'image/svg+xml');
   res.setHeader('Cache-Control', 'public, max-age=604800');
@@ -637,10 +703,10 @@ app.get('/remote.html', (req, res) => {
 // ─── Socket.IO Real-Time Slide Synchronization ──────────────────────────────
 io.on('connection', (socket) => {
   // Join room by 4-digit PIN
-  socket.on('join-room', ({ pin, role }) => {
+  socket.on('join-room', async ({ pin, role }) => {
     if (!pin) return;
     const pinStr = String(pin).trim();
-    const room = getOrRestoreRoom(pinStr);
+    const room = await getOrRestoreRoom(pinStr);
 
     if (room) {
       socket.join(pinStr);
@@ -673,10 +739,10 @@ io.on('connection', (socket) => {
   });
 
   // Support legacy phone-join / board-join events
-  socket.on('phone-join', ({ pin }) => {
+  socket.on('phone-join', async ({ pin }) => {
     if (!pin) return;
     const pinStr = String(pin).trim();
-    const room = getOrRestoreRoom(pinStr);
+    const room = await getOrRestoreRoom(pinStr);
     socket.join(pinStr);
     if (room) {
       if (room.hasPhoneConnected) {
@@ -693,10 +759,10 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('board-join', ({ pin }) => {
+  socket.on('board-join', async ({ pin }) => {
     if (!pin) return;
     const pinStr = String(pin).trim();
-    const room = getOrRestoreRoom(pinStr);
+    const room = await getOrRestoreRoom(pinStr);
     if (!room) {
       socket.emit('board-joined', { ok: false, error: 'PIN not found' });
       return;
@@ -712,10 +778,10 @@ io.on('connection', (socket) => {
   });
 
   // Slide navigation ('NEXT', 'PREV', 'GOTO')
-  socket.on('slide-command', ({ pin, action, page }) => {
+  socket.on('slide-command', async ({ pin, action, page }) => {
     if (!pin) return;
     const pinStr = String(pin).trim();
-    const room = getOrRestoreRoom(pinStr);
+    const room = await getOrRestoreRoom(pinStr);
     if (room) {
       const maxPage = room.totalPages || 999;
       if (action === 'NEXT') room.currentPage = Math.min(maxPage, room.currentPage + 1);
@@ -735,10 +801,10 @@ io.on('connection', (socket) => {
   });
 
   // Support legacy control event
-  socket.on('control', ({ pin, action, page }) => {
+  socket.on('control', async ({ pin, action, page }) => {
     if (!pin) return;
     const pinStr = String(pin).trim();
-    const room = getOrRestoreRoom(pinStr);
+    const room = await getOrRestoreRoom(pinStr);
     if (room) {
       if (action === 'NEXT') room.currentPage++;
       else if (action === 'PREV') room.currentPage = Math.max(1, room.currentPage - 1);
@@ -756,10 +822,10 @@ io.on('connection', (socket) => {
   });
 
   // Board reports total pages loaded
-  socket.on('pdf-loaded', ({ pin, totalPages }) => {
+  socket.on('pdf-loaded', async ({ pin, totalPages }) => {
     if (!pin) return;
     const pinStr = String(pin).trim();
-    const room = getOrRestoreRoom(pinStr);
+    const room = await getOrRestoreRoom(pinStr);
     if (room) {
       room.totalPages = totalPages;
       io.to(pinStr).emit('total-pages', { totalPages, currentPage: room.currentPage });
