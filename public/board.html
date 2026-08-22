@@ -556,364 +556,6 @@
       animation: fadeInSettings 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* ── Floating QR Code Pairing Panel (Smartboard UI) ── */
-    .qr-pairing-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(4, 7, 14, 0.75);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 220;
-      padding: 16px;
-      animation: fadeInSettings 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .smartboard-pairing-card {
-      width: 100%;
-      max-width: 480px;
-      background: rgba(15, 23, 42, 0.94);
-      backdrop-filter: blur(32px);
-      -webkit-backdrop-filter: blur(32px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-radius: 28px;
-      padding: 26px 24px 22px;
-      box-shadow: 0 30px 80px -10px rgba(0, 0, 0, 0.8), 0 0 35px rgba(79, 70, 229, 0.25);
-      animation: scaleInSettings 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      max-height: 94vh;
-      overflow-y: auto;
-      box-sizing: border-box;
-      position: relative;
-    }
-
-    .smartboard-brand-row {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-
-    .smartboard-brand-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      color: #818cf8;
-      letter-spacing: 0.05em;
-    }
-
-    .smartboard-brand-badge svg {
-      width: 16px;
-      height: 16px;
-      color: #818cf8;
-    }
-
-    .session-status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 12px;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      color: #34d399;
-    }
-
-    .session-status-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #10b981;
-      box-shadow: 0 0 8px #10b981;
-      animation: pulseConnDot 1.2s infinite alternate;
-    }
-
-    .pairing-header-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 24px;
-      font-weight: 700;
-      color: #f8fafc;
-      letter-spacing: -0.01em;
-      margin-bottom: 4px;
-    }
-
-    .pairing-header-sub {
-      font-size: 13.5px;
-      color: #94a3b8;
-      margin-bottom: 18px;
-    }
-
-    /* Segmented Tab Switch (QR Code / Enter PIN) */
-    .pairing-nav-tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      width: 100%;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 4px;
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      margin-bottom: 18px;
-    }
-
-    .pairing-tab-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 9px 12px;
-      border-radius: 12px;
-      border: 1px solid transparent;
-      background: transparent;
-      color: #94a3b8;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 12.5px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .pairing-tab-btn.active {
-      background: rgba(99, 102, 241, 0.25);
-      color: #ffffff;
-      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
-      border-color: rgba(129, 140, 248, 0.4);
-    }
-
-    .pairing-tab-btn:not(.active):hover {
-      background: rgba(255, 255, 255, 0.05);
-      color: #cbd5e1;
-    }
-
-    .qr-instruction-label {
-      font-size: 13px;
-      color: #cbd5e1;
-      font-weight: 500;
-      margin-bottom: 12px;
-    }
-
-    .qr-instruction-label strong {
-      color: #818cf8;
-      font-weight: 700;
-    }
-
-    #qrCodeWrapper {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 220px;
-      height: 220px;
-      background: #ffffff;
-      padding: 12px;
-      border-radius: 20px;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 25px rgba(99, 102, 241, 0.2);
-      margin-bottom: 16px;
-      position: relative;
-    }
-
-    #qrCodeImg {
-      width: 196px;
-      height: 196px;
-      border-radius: 8px;
-      object-fit: contain;
-      display: block;
-      background: #ffffff;
-    }
-
-    .url-copy-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 14px;
-      padding: 6px 8px 6px 12px;
-      margin-bottom: 16px;
-      box-sizing: border-box;
-    }
-
-    .url-copy-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: #cbd5e1;
-      font-family: 'Space Grotesk', monospace, sans-serif;
-      font-size: 11.5px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .url-copy-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      padding: 6px 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: rgba(255, 255, 255, 0.08);
-      color: #f1f5f9;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      flex-shrink: 0;
-    }
-
-    .url-copy-btn:hover {
-      background: rgba(99, 102, 241, 0.3);
-      border-color: rgba(129, 140, 248, 0.5);
-      color: #ffffff;
-    }
-
-    .pairing-or-divider {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .pairing-or-divider::before,
-    .pairing-or-divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .pairing-or-text {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      color: #64748b;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }
-
-    .pin-display-label {
-      font-size: 12.5px;
-      color: #cbd5e1;
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-
-    .pin-display-label strong {
-      color: #fbbf24;
-      font-weight: 700;
-    }
-
-    .pin-display-boxes {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
-    .pin-box-item {
-      width: 54px;
-      height: 66px;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1.5px solid rgba(251, 191, 36, 0.35);
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 32px;
-      font-weight: 700;
-      color: #fbbf24;
-      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.15);
-    }
-
-    .wifi-guidance-card {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      background: rgba(99, 102, 241, 0.08);
-      border: 1px solid rgba(129, 140, 248, 0.2);
-      border-radius: 14px;
-      padding: 10px 14px;
-      margin-bottom: 16px;
-      text-align: left;
-      font-size: 12px;
-      color: #c7d2fe;
-      box-sizing: border-box;
-    }
-
-    .wifi-guidance-card svg {
-      flex-shrink: 0;
-      stroke: #818cf8;
-    }
-
-    .pairing-bottom-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding-top: 14px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      gap: 8px;
-    }
-
-    .doc-info-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: #94a3b8;
-      max-width: 280px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-align: left;
-    }
-
-    .doc-info-badge svg {
-      stroke: #818cf8;
-      flex-shrink: 0;
-    }
-
-    .btn-end-session {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      background: rgba(239, 68, 68, 0.12);
-      color: #fca5a5;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 11.5px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      flex-shrink: 0;
-    }
-
-    .btn-end-session:hover {
-      background: rgba(239, 68, 68, 0.25);
-      border-color: rgba(239, 68, 68, 0.5);
-      color: #ffffff;
-    }
-
     @keyframes fadeInSettings {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -1398,14 +1040,6 @@
 </head>
 <body>
 
-  <!-- Fullscreen Request Permission Banner for Board Screen -->
-  <div id="fsBanner" class="hidden" style="position: fixed; top: 18px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(129, 140, 248, 0.4); border-radius: 20px; padding: 10px 18px; display: flex; align-items: center; gap: 14px; z-index: 999; box-shadow: 0 14px 40px rgba(0,0,0,0.6); color: #f8fafc; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600;">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-    <span>Phone requested Full Screen</span>
-    <button id="fsBannerBtn" style="background: linear-gradient(135deg, #4f46e5, #6366f1); border: none; border-radius: 12px; color: #ffffff; padding: 7px 16px; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);">Enter Full Screen</button>
-    <button id="fsBannerClose" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; color: #94a3b8; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; font-weight: 700;">✕</button>
-  </div>
-
   <!-- Interactive Glowing Doodle Particle Canvas -->
   <canvas id="ambientDoodleCanvas"></canvas>
 
@@ -1515,9 +1149,6 @@
         <span id="liveTimeDisplay" class="clock-time">--:-- --</span>
       </div>
       <div class="top-bar-divider"></div>
-      <button class="top-bar-btn" id="topBarQrBtn" title="Connect Remote (Q)">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
-      </button>
       <button class="top-bar-btn" id="topBarSettingsBtn" title="Display Settings (S)">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
@@ -1541,9 +1172,6 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
       </button>
       <div class="nav-divider"></div>
-      <button class="board-nav-btn" id="boardBtnQr" title="Connect Remote (Q)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
-      </button>
       <button class="board-nav-btn" id="boardBtnSettings" title="Display Settings (S)">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
@@ -1588,22 +1216,15 @@
         <!-- THEME SELECTION: DAY / NIGHT -->
         <div class="settings-group">
           <label class="settings-label">
-            <span style="display: inline-flex; align-items: center; gap: 6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.92 0 1.7-.72 1.7-1.65 0-.43-.17-.83-.45-1.12-.27-.29-.44-.69-.44-1.13 0-.93.77-1.7 1.7-1.7h2.49c2.8 0 5-2.2 5-5 0-5.5-4.5-10-10-10Z"/></svg>
-              Display Theme
-            </span>
+            <span>🎨 Display Theme</span>
           </label>
           <div class="theme-toggle-row">
             <button class="theme-option-btn active" id="modalDayBtn">
-              <span class="theme-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-              </span>
+              <span class="theme-icon">☀️</span>
               <span>Day Mode</span>
             </button>
             <button class="theme-option-btn" id="modalNightBtn">
-              <span class="theme-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-              </span>
+              <span class="theme-icon">🌙</span>
               <span>Dark / Night</span>
             </button>
           </div>
@@ -1613,21 +1234,14 @@
         <div class="settings-group">
           <div class="settings-label-row">
             <label class="settings-label" for="modalBrightnessSlider">
-              <span style="display: inline-flex; align-items: center; gap: 6px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-                Brightness
-              </span>
+              <span>🔆 Brightness</span>
             </label>
             <span class="settings-value-badge" id="modalBrightnessVal">100%</span>
           </div>
           <div class="slider-control-row">
-            <span class="slider-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 4h.01"/><path d="M20 12h.01"/><path d="M12 20h.01"/><path d="M4 12h.01"/></svg>
-            </span>
+            <span class="slider-icon">🌑</span>
             <input type="range" id="modalBrightnessSlider" class="custom-range" min="20" max="100" value="100" step="1" />
-            <span class="slider-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-            </span>
+            <span class="slider-icon">☀️</span>
           </div>
         </div>
 
@@ -1635,10 +1249,7 @@
         <div class="settings-group">
           <div class="settings-label-row">
             <label class="settings-label" for="modalZoomSlider">
-              <span style="display: inline-flex; align-items: center; gap: 6px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-                Canvas Zoom
-              </span>
+              <span>🔍 Canvas Zoom</span>
             </label>
             <span class="settings-value-badge" id="modalZoomVal">100%</span>
           </div>
@@ -1653,10 +1264,7 @@
         <!-- FULLSCREEN PRESENTATION -->
         <div class="settings-group">
           <label class="settings-label">
-            <span style="display: inline-flex; align-items: center; gap: 6px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
-              Screen Display
-            </span>
+            <span>🖥️ Screen Display</span>
           </label>
           <button class="fullscreen-action-btn" id="modalFullscreenBtn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1666,109 +1274,6 @@
           </button>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- CONNECT REMOTE / QR CODE SMARTBOARD PAIRING MODAL -->
-  <div class="qr-pairing-backdrop hidden" id="qrModal">
-    <div class="smartboard-pairing-card" role="dialog" aria-modal="true" aria-labelledby="pairingTitle">
-      
-      <!-- Top header with brand and session active badge -->
-      <div class="smartboard-brand-row">
-        <div class="smartboard-brand-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="7" height="7" x="3" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="14" rx="1.5"/><rect width="7" height="7" x="3" y="14" rx="1.5"/>
-          </svg>
-          <span>SmartBoard</span>
-        </div>
-        <div class="session-status-badge">
-          <span class="session-status-dot"></span>
-          <span>Session Active</span>
-        </div>
-      </div>
-
-      <h2 class="pairing-header-title" id="pairingTitle">Pair Your Phone</h2>
-      <p class="pairing-header-sub">Connect your phone to this presentation</p>
-
-      <!-- Segmented Tab Switch (QR Code / Enter PIN) -->
-      <div class="pairing-nav-tabs">
-        <button type="button" class="pairing-tab-btn active" id="tabQrBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>
-          </svg>
-          <span>QR Code</span>
-        </button>
-        <button type="button" class="pairing-tab-btn" id="tabPinBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h.01"/><path d="M12 7h.01"/><path d="M17 7h.01"/><path d="M7 12h.01"/><path d="M12 12h.01"/><path d="M17 12h.01"/><path d="M7 17h.01"/><path d="M12 17h.01"/><path d="M17 17h.01"/>
-          </svg>
-          <span>Enter PIN</span>
-        </button>
-      </div>
-
-      <!-- QR Code View -->
-      <div id="panelQrView" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <div class="qr-instruction-label">Scan this <strong>QR code</strong> with your phone</div>
-
-        <!-- High-Contrast QR Code Container -->
-        <div id="qrCodeWrapper">
-          <img id="qrCodeImg" alt="Presentation QR Code" />
-          <div id="qrErrorMsg" class="hidden" style="color: #ef4444; font-size: 13.5px; font-weight: 600; text-align: center; max-width: 180px; position: absolute; padding: 10px;">Unable to generate QR code</div>
-        </div>
-
-        <!-- Reachable URL Display Bar + Copy Button -->
-        <div class="url-copy-container">
-          <input type="text" readonly id="pairingUrlInput" class="url-copy-input" value="Loading pairing link..." />
-          <button type="button" class="url-copy-btn" id="copyPairingLinkBtn" title="Copy pairing URL">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-            </svg>
-            <span id="copyLinkBtnText">Copy</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- PIN Code Display Panel -->
-      <div id="panelPinView" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-        <div class="pairing-or-divider">
-          <span class="pairing-or-text">OR</span>
-        </div>
-
-        <div class="pin-display-label">Enter <strong>4-Digit PIN</strong></div>
-        <div class="pin-display-boxes" id="qrModalPinBoxes">
-          <div class="pin-box-item">-</div>
-          <div class="pin-box-item">-</div>
-          <div class="pin-box-item">-</div>
-          <div class="pin-box-item">-</div>
-        </div>
-      </div>
-
-      <!-- Wi-Fi Network Guidance Notice -->
-      <div class="wifi-guidance-card">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          <path d="m9 12 2 2 4-4"/>
-        </svg>
-        <span>Make sure your phone is on the same Wi-Fi network.</span>
-      </div>
-
-      <!-- Bottom bar: Document Info + End Session / Close -->
-      <div class="pairing-bottom-bar">
-        <div class="doc-info-badge" id="docInfoBadge" title="Current Presentation">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-            <polyline points="14 2 14 8 20 8"/>
-          </svg>
-          <span id="pairingDocName">Presentation Session</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <button type="button" class="btn-end-session" id="modalEndSessionBtn">
-            <span>End Session</span>
-          </button>
-          <button type="button" class="settings-close-btn" id="qrModalCloseBtn" aria-label="Close Pairing Modal">✕</button>
-        </div>
-      </div>
-
     </div>
   </div>
 
@@ -1821,23 +1326,6 @@
     const modalFullscreenBtn    = document.getElementById('modalFullscreenBtn');
     const modalFullscreenLabel  = document.getElementById('modalFullscreenLabel');
 
-    // QR Pairing Modal DOM elements
-    const qrModal               = document.getElementById('qrModal');
-    const qrModalCloseBtn       = document.getElementById('qrModalCloseBtn');
-    const topBarQrBtn           = document.getElementById('topBarQrBtn');
-    const boardBtnQr            = document.getElementById('boardBtnQr');
-    const qrCodeImg             = document.getElementById('qrCodeImg');
-    const copyPairingLinkBtn    = document.getElementById('copyPairingLinkBtn');
-    const copyLinkBtnText       = document.getElementById('copyLinkBtnText');
-    const pairingUrlInput       = document.getElementById('pairingUrlInput');
-    const qrModalPinBoxes       = document.getElementById('qrModalPinBoxes');
-    const pairingDocName        = document.getElementById('pairingDocName');
-    const modalEndSessionBtn    = document.getElementById('modalEndSessionBtn');
-    const tabQrBtn              = document.getElementById('tabQrBtn');
-    const tabPinBtn             = document.getElementById('tabPinBtn');
-    const panelQrView           = document.getElementById('panelQrView');
-    const panelPinView          = document.getElementById('panelPinView');
-
     // ── State ──
     let pdfDoc          = null;
     let pageNum         = 1;
@@ -1845,8 +1333,6 @@
     let pageNumPending  = null;
     let socket          = null;
     let activePin       = null;
-    let activeToken     = null;
-    let activeFilename  = null;
     let zoomLevel       = 1.0;
     let brightnessLevel = 100;   // 20–100
     let isNightMode     = false;
@@ -1956,8 +1442,6 @@
         const data = await response.json();
         if (data.ok && data.pdfUrl) {
           activePin = pin;
-          activeToken = data.token || null;
-          activeFilename = data.filename || null;
           try {
             localStorage.setItem('smartboard_board_pin', pin);
           } catch (_) {}
@@ -1969,7 +1453,6 @@
 
           initSocketConnection(pin);
           loadPdfDocument(`${SERVER_URL}${data.pdfUrl}`, data.currentPage || 1);
-          openQrModal();
         } else {
           throw new Error('Invalid presentation payload.');
         }
@@ -2028,32 +1511,6 @@
       }
     }
 
-    // ── Fullscreen Request Permission Banner DOM ──
-    const fsBanner      = document.getElementById('fsBanner');
-    const fsBannerBtn   = document.getElementById('fsBannerBtn');
-    const fsBannerClose = document.getElementById('fsBannerClose');
-
-    function showFsBanner() {
-      if (fsBanner) fsBanner.classList.remove('hidden');
-    }
-
-    function hideFsBanner() {
-      if (fsBanner) fsBanner.classList.add('hidden');
-    }
-
-    if (fsBannerBtn) {
-      fsBannerBtn.addEventListener('click', () => {
-        hideFsBanner();
-        const docEl = document.documentElement;
-        if (docEl.requestFullscreen) docEl.requestFullscreen().catch(err => console.warn('Fullscreen denied:', err));
-        else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
-      });
-    }
-
-    if (fsBannerClose) {
-      fsBannerClose.addEventListener('click', hideFsBanner);
-    }
-
     function updateSettingsModalUI() {
       if (modalBrightnessSlider) modalBrightnessSlider.value = brightnessLevel;
       if (modalBrightnessVal) modalBrightnessVal.textContent = `${brightnessLevel}%`;
@@ -2077,7 +1534,6 @@
 
     function updateFullscreenUI() {
       const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-      if (isFs) hideFsBanner();
       if (modalFullscreenLabel) {
         modalFullscreenLabel.textContent = isFs ? 'Exit Fullscreen' : 'Enter Fullscreen Presentation';
       }
@@ -2085,42 +1541,23 @@
         const textSpan = pinFullscreenBtn.querySelector('span');
         if (textSpan) textSpan.textContent = isFs ? 'EXIT FULLSCREEN' : 'FULLSCREEN';
       }
-      if (socket && activePin) {
-        socket.emit('fullscreen-status', { pin: activePin, isFullscreen: isFs });
-      }
     }
 
-    function requestBoardFullscreen() {
+    function toggleFullscreen() {
       const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
       if (!isFs) {
         const docEl = document.documentElement;
-        const p = docEl.requestFullscreen ? docEl.requestFullscreen() : (docEl.webkitRequestFullscreen ? docEl.webkitRequestFullscreen() : null);
-        if (p && typeof p.catch === 'function') {
-          p.catch(err => {
-            console.warn('[Fullscreen] Gesture required by browser. Displaying permission prompt on Board:', err);
-            showFsBanner();
-          });
+        if (docEl.requestFullscreen) {
+          docEl.requestFullscreen().catch(err => console.warn('Fullscreen denied:', err));
+        } else if (docEl.webkitRequestFullscreen) {
+          docEl.webkitRequestFullscreen();
         }
-      }
-    }
-
-    function exitBoardFullscreen() {
-      hideFsBanner();
-      if (document.fullscreenElement || document.webkitFullscreenElement) {
+      } else {
         if (document.exitFullscreen) {
           document.exitFullscreen().catch(err => console.warn('Exit fullscreen error:', err));
         } else if (document.webkitExitFullscreen) {
           document.webkitExitFullscreen();
         }
-      }
-    }
-
-    function toggleFullscreen() {
-      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-      if (isFs) {
-        exitBoardFullscreen();
-      } else {
-        requestBoardFullscreen();
       }
     }
 
@@ -2160,169 +1597,6 @@
       if (syncSocket && socket && activePin) {
         socket.emit('zoom-command', { pin: activePin, action: 'custom', zoom: zoomLevel });
       }
-    }
-
-    // ── QR Code Pairing Modal Functions ──
-    function showQrError() {
-      if (qrCodeImg) qrCodeImg.classList.add('hidden');
-      const errEl = document.getElementById('qrErrorMsg');
-      if (errEl) errEl.classList.remove('hidden');
-      console.log('[QR] QR displayed: No (Error shown)');
-    }
-
-    function resetQrDisplay() {
-      if (qrCodeImg) qrCodeImg.classList.remove('hidden');
-      const errEl = document.getElementById('qrErrorMsg');
-      if (errEl) errEl.classList.add('hidden');
-    }
-
-    async function renderQrCode(token) {
-      if (!qrCodeImg) return;
-      if (!token) {
-        showQrError();
-        return;
-      }
-
-      resetQrDisplay();
-      const fetchUrl = `${SERVER_URL}/api/session/qr/${encodeURIComponent(token)}`;
-
-      try {
-        const res = await fetch(fetchUrl);
-        if (!res.ok) {
-          throw new Error(`QR request failed: ${res.status}`);
-        }
-
-        const data = await res.json();
-        if (!data.qrDataUrl) {
-          throw new Error('Server did not return qrDataUrl');
-        }
-
-        qrCodeImg.src = data.qrDataUrl;
-        qrCodeImg.style.display = 'block';
-
-        if (pairingUrlInput) {
-          pairingUrlInput.value = data.remoteUrl || `${SERVER_URL}/remote?session=${token}`;
-        }
-      } catch (error) {
-        console.error('[QR] ERROR:', error);
-        showQrError();
-        if (pairingUrlInput) {
-          pairingUrlInput.value = `${SERVER_URL}/remote?session=${token}`;
-        }
-      }
-    }
-
-    function renderPinBoxes(pin) {
-      if (!qrModalPinBoxes) return;
-      qrModalPinBoxes.innerHTML = '';
-      const digits = String(pin || '----').padStart(4, '-').slice(0, 4).split('');
-      digits.forEach(d => {
-        const div = document.createElement('div');
-        div.className = 'pin-box-item';
-        div.textContent = d;
-        qrModalPinBoxes.appendChild(div);
-      });
-    }
-
-    function openQrModal() {
-      if (!activePin) return;
-      renderPinBoxes(activePin);
-      if (pairingDocName) {
-        pairingDocName.textContent = activeFilename || `Presentation ${activePin}`;
-      }
-      closeSettings();
-      qrModal.classList.remove('hidden');
-      if (activeToken) {
-        renderQrCode(activeToken);
-      } else {
-        fetch(`${SERVER_URL}/api/presentation/${activePin}`)
-          .then(r => r.json())
-          .then(d => {
-            if (d.token) {
-              activeToken = d.token;
-              activeFilename = d.filename || activeFilename;
-              if (pairingDocName) pairingDocName.textContent = activeFilename || `Presentation ${activePin}`;
-              renderQrCode(activeToken);
-            } else {
-              showQrError();
-            }
-          })
-          .catch(e => {
-            console.warn(e);
-            showQrError();
-          });
-      }
-    }
-
-    function closeQrModal() {
-      if (qrModal) qrModal.classList.add('hidden');
-    }
-
-    function toggleQrModal() {
-      if (qrModal && !qrModal.classList.contains('hidden')) {
-        closeQrModal();
-      } else {
-        openQrModal();
-      }
-    }
-
-    // Tab buttons handling
-    if (tabQrBtn && tabPinBtn) {
-      tabQrBtn.addEventListener('click', () => {
-        tabQrBtn.classList.add('active');
-        tabPinBtn.classList.remove('active');
-        if (panelQrView) panelQrView.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      });
-
-      tabPinBtn.addEventListener('click', () => {
-        tabPinBtn.classList.add('active');
-        tabQrBtn.classList.remove('active');
-        if (panelPinView) panelPinView.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      });
-    }
-
-    if (topBarQrBtn) topBarQrBtn.addEventListener('click', toggleQrModal);
-    if (boardBtnQr) boardBtnQr.addEventListener('click', toggleQrModal);
-    if (qrModalCloseBtn) qrModalCloseBtn.addEventListener('click', closeQrModal);
-    if (qrModal) {
-      qrModal.addEventListener('click', (e) => {
-        if (e.target === qrModal) closeQrModal();
-      });
-    }
-
-    if (copyPairingLinkBtn) {
-      copyPairingLinkBtn.addEventListener('click', async () => {
-        const link = (pairingUrlInput && pairingUrlInput.value) || `${SERVER_URL}/remote?session=${encodeURIComponent(activeToken || '')}`;
-        try {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(link);
-          } else {
-            const ta = document.createElement('textarea');
-            ta.value = link;
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-          }
-          if (copyLinkBtnText) {
-            const orig = copyLinkBtnText.textContent;
-            copyLinkBtnText.textContent = 'Copied ✓';
-            setTimeout(() => { copyLinkBtnText.textContent = orig; }, 2000);
-          }
-        } catch (err) {
-          console.warn('[Copy Error]', err);
-        }
-      });
-    }
-
-    if (modalEndSessionBtn) {
-      modalEndSessionBtn.addEventListener('click', () => {
-        if (activePin) {
-          if (socket) socket.emit('exit-presentation', { pin: activePin });
-          closeQrModal();
-          exitPresentation(activePin);
-        }
-      });
     }
 
     // Bind settings events
@@ -2402,20 +1676,8 @@
         return;
       }
 
-      if (e.key === 'Escape') {
-        if (qrModal && !qrModal.classList.contains('hidden')) {
-          closeQrModal();
-          return;
-        }
-        if (settingsModal && !settingsModal.classList.contains('hidden')) {
-          closeSettings();
-          return;
-        }
-      }
-
-      if (e.key === 'q' || e.key === 'Q') {
-        e.preventDefault();
-        toggleQrModal();
+      if (e.key === 'Escape' && settingsModal && !settingsModal.classList.contains('hidden')) {
+        closeSettings();
         return;
       }
 
@@ -2546,34 +1808,6 @@
           applyZoom();
         });
 
-        // Fullscreen command & request handling from phone
-        const handleFsRequest = (data) => {
-          if (data && data.action) {
-            if (data.action === 'exit') {
-              exitBoardFullscreen();
-            } else if (data.action === 'enter') {
-              requestBoardFullscreen();
-            } else if (data.action === 'toggle') {
-              toggleFullscreen();
-            }
-          } else {
-            toggleFullscreen();
-          }
-        };
-
-        socket.on('fullscreen-command', handleFsRequest);
-        socket.on('request-fullscreen', handleFsRequest);
-
-        // Token regenerated (e.g. from phone or another admin)
-        socket.on('token-regenerated', (data) => {
-          if (data && data.token) {
-            activeToken = data.token;
-            if (qrModal && !qrModal.classList.contains('hidden')) {
-              renderQrCode(activeToken);
-            }
-          }
-        });
-
         // Exit presentation
         socket.on('exit-presentation', () => {
           exitPresentation(activePin);
@@ -2627,8 +1861,6 @@
         const data = await response.json();
         if (data.ok && data.pdfUrl) {
           activePin = savedPin;
-          activeToken = data.token || null;
-          activeFilename = data.filename || null;
           displayPin.textContent = savedPin;
           pinOverlay.classList.add('hidden');
           topBar.classList.remove('hidden');
@@ -2637,7 +1869,6 @@
 
           initSocketConnection(savedPin);
           loadPdfDocument(`${SERVER_URL}${data.pdfUrl}`, data.currentPage || 1);
-          openQrModal();
         } else {
           localStorage.removeItem(STORAGE_KEY_BOARD_PIN);
         }

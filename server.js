@@ -30,15 +30,12 @@
 
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
-const crypto = require('crypto');
 const { execFile, execFileSync } = require('child_process');
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const multer = require('multer');
 const { Server } = require('socket.io');
-const QRCode = require('qrcode');
 
 const app = express();
 const server = http.createServer(app);
@@ -180,11 +177,6 @@ function isValidPin(pin) {
 
 // ─── In-memory presentation room state: PIN → presentation data ────────────
 const rooms = new Map();
-const tokenToPinMap = new Map();
-
-function generateSessionToken() {
-  return crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex');
-}
 
 function generatePin() {
   let pin;
@@ -201,13 +193,7 @@ function getOrRestoreRoom(pin) {
   if (!isValidPin(pin)) return null;
   const pinStr = String(pin).trim();
   let room = rooms.get(pinStr);
-  if (room) {
-    if (!room.token) {
-      room.token = generateSessionToken();
-      tokenToPinMap.set(room.token, pinStr);
-    }
-    return room;
-  }
+  if (room) return room;
 
   // Fallback: check if the PDF file exists on disk (e.g. across server restarts)
   const finalFilename = `${pinStr}.pdf`;
@@ -215,21 +201,17 @@ function getOrRestoreRoom(pin) {
   if (fs.existsSync(finalPath)) {
     try {
       const stats = fs.statSync(finalPath);
-      const token = generateSessionToken();
       room = {
         pin: pinStr,
-        token,
         filename: finalFilename,
         pdfUrl: `/uploads/${finalFilename}`,
         currentPage: 1,
         totalPages: 1,
         createdAt: stats.mtimeMs || Date.now(),
-        hasPhoneConnected: false,
-        boardConnected: false
+        hasPhoneConnected: false
       };
       rooms.set(pinStr, room);
-      tokenToPinMap.set(token, pinStr);
-      console.log(`[Session] Restored PIN from disk: ${pinStr} (token: ${token})`);
+      console.log(`[Session] Restored PIN from disk: ${pinStr}`);
       return room;
     } catch (e) {
       console.warn(`[Session] Could not read file stats for PIN ${pinStr}:`, e.message);
@@ -249,19 +231,15 @@ function scanAndRestoreExistingRooms() {
         const pin = match[1];
         const filePath = path.join(UPLOAD_DIR, f);
         const stats = fs.statSync(filePath);
-        const token = generateSessionToken();
         rooms.set(pin, {
           pin,
-          token,
           filename: f,
           pdfUrl: `/uploads/${f}`,
           currentPage: 1,
           totalPages: 1,
           createdAt: stats.mtimeMs || Date.now(),
-          hasPhoneConnected: false,
-          boardConnected: false
+          hasPhoneConnected: false
         });
-        tokenToPinMap.set(token, pin);
         console.log(`[Session] Loaded existing PIN on startup: ${pin}`);
       }
     }
@@ -291,7 +269,6 @@ function cleanupRoom(pin) {
   const pinStr = String(pin).trim();
   const room = rooms.get(pinStr);
   if (room) {
-    if (room.token) tokenToPinMap.delete(room.token);
     silentUnlink(path.join(UPLOAD_DIR, room.filename));
     rooms.delete(pinStr);
   } else {
@@ -453,22 +430,18 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
     }
 
     const pdfUrl = `/uploads/${finalFilename}`;
-    const token = generateSessionToken();
     rooms.set(pin, {
       pin,
-      token,
       filename: finalFilename,
       pdfUrl,
       currentPage: 1,
       totalPages: 1,
       createdAt: Date.now(),
-      hasPhoneConnected: false,
-      boardConnected: false
+      hasPhoneConnected: false
     });
-    tokenToPinMap.set(token, pin);
 
-    console.log(`[Session] Created PIN: ${pin} (token: ${token})`);
-    return res.json({ ok: true, pin, token, pdfUrl });
+    console.log(`[Session] Created PIN: ${pin}`);
+    return res.json({ ok: true, pin, pdfUrl });
 
   } catch (err) {
     console.error('[Upload Error]', err);
@@ -501,164 +474,19 @@ app.use((err, req, res, next) => {
 });
 
 // GET /api/presentation/:pin: Retrieve presentation details by PIN
-app.get('/api/presentation/:pin', async (req, res) => {
+app.get('/api/presentation/:pin', (req, res) => {
   const { pin } = req.params;
   const room = getOrRestoreRoom(pin);
   if (!room) {
     return res.status(404).json({ ok: false, error: 'Invalid or expired presentation PIN.' });
   }
-
-  // Ensure room has a secure token
-  if (!room.token) {
-    room.token = generateSessionToken();
-    tokenToPinMap.set(room.token, room.pin);
-  }
-
   return res.json({
     ok: true,
     pin: room.pin,
-    token: room.token,
-    filename: room.filename || `${room.pin}.pdf`,
     pdfUrl: room.pdfUrl,
     currentPage: room.currentPage,
     totalPages: room.totalPages
   });
-});
-
-// GET /api/session/validate/:token: Validate QR pairing token and return session state
-app.get('/api/session/validate/:token', (req, res) => {
-  const { token } = req.params;
-  if (!token || typeof token !== 'string') {
-    return res.status(400).json({ ok: false, error: 'Invalid session token format.' });
-  }
-  const tokenStr = token.trim();
-  const pin = tokenToPinMap.get(tokenStr);
-  if (!pin) {
-    return res.status(404).json({ ok: false, error: 'Presentation session expired or invalid.' });
-  }
-  const room = getOrRestoreRoom(pin);
-  if (!room || room.token !== tokenStr) {
-    return res.status(404).json({ ok: false, error: 'Presentation session expired or invalid.' });
-  }
-  return res.json({
-    ok: true,
-    pin: room.pin,
-    token: room.token,
-    filename: room.filename || `${room.pin}.pdf`,
-    pdfUrl: room.pdfUrl,
-    currentPage: room.currentPage,
-    totalPages: room.totalPages
-  });
-});
-
-// POST /api/session/regenerate-token: Invalidate previous QR token and create a fresh one
-app.post('/api/session/regenerate-token', (req, res) => {
-  const { pin } = req.body;
-  if (!isValidPin(pin)) {
-    return res.status(400).json({ ok: false, error: 'Invalid PIN.' });
-  }
-  const room = getOrRestoreRoom(pin);
-  if (!room) {
-    return res.status(404).json({ ok: false, error: 'Presentation session not found.' });
-  }
-  // Invalidate old token
-  if (room.token) {
-    tokenToPinMap.delete(room.token);
-  }
-  const newToken = generateSessionToken();
-  room.token = newToken;
-  tokenToPinMap.set(newToken, room.pin);
-
-  console.log(`[Session] Regenerated QR token for PIN ${room.pin}: ${newToken}`);
-  io.to(room.pin).emit('token-regenerated', { token: newToken });
-  return res.json({ ok: true, pin: room.pin, token: newToken });
-});
-
-// ─── Reachable Network & LAN IP Resolution Helpers ─────────────────────────
-function getLocalIpAddress() {
-  try {
-    const interfaces = os.networkInterfaces();
-    for (const name of Object.keys(interfaces)) {
-      for (const iface of interfaces[name]) {
-        // Skip internal (127.0.0.1) and non-IPv4 addresses
-        if (iface.family === 'IPv4' && !iface.internal) {
-          return iface.address;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('[Network] Could not determine local IP:', err.message);
-  }
-  return 'localhost';
-}
-
-function getReachableRemoteUrl(req, sessionToken) {
-  const forwardedHost = req.headers['x-forwarded-host'];
-  const forwardedProto = req.headers['x-forwarded-proto'];
-  const rawHost = forwardedHost || req.get('host') || `localhost:${PORT}`;
-  const proto = Array.isArray(forwardedProto)
-    ? forwardedProto[0]
-    : forwardedProto || (req.secure ? 'https' : 'http');
-
-  let targetHost = rawHost;
-  // If host is localhost/127.0.0.1 and not behind a public proxy, substitute reachable LAN IP
-  const [hostname, port] = rawHost.split(':');
-  if (!forwardedHost && (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0' || hostname === '::1')) {
-    const lanIp = getLocalIpAddress();
-    if (lanIp && lanIp !== 'localhost') {
-      targetHost = port ? `${lanIp}:${port}` : `${lanIp}:${PORT}`;
-    }
-  }
-
-  const remoteUrl = new URL('/remote', `${proto}://${targetHost}`);
-  if (sessionToken) {
-    remoteUrl.searchParams.set('session', sessionToken);
-  }
-  return remoteUrl.toString();
-}
-
-// GET /api/server-info: Network diagnostics & reachable pairing URL base
-app.get('/api/server-info', (req, res) => {
-  const lanIp = getLocalIpAddress();
-  const remoteUrlBase = getReachableRemoteUrl(req, '');
-  return res.json({
-    ok: true,
-    lanIp,
-    port: PORT,
-    remoteUrlBase
-  });
-});
-
-// GET /api/session/qr/:token: Generate high-contrast QR Data URL directly
-app.get('/api/session/qr/:token', async (req, res) => {
-  const rawToken = typeof req.params.token === 'string' ? req.params.token.trim() : '';
-  console.log(`[QR API] Request received for token: "${rawToken}"`);
-  if (!rawToken) {
-    console.warn('[QR API] Bad Request: Missing token');
-    return res.status(400).json({ ok: false, error: 'Missing token' });
-  }
-
-  const pin = tokenToPinMap.get(rawToken);
-  if (!pin) {
-    console.warn(`[QR API] Not Found: Token "${rawToken}" is not mapped to any active session`);
-    return res.status(404).json({ ok: false, error: 'Invalid or expired token' });
-  }
-
-  const remoteUrlString = getReachableRemoteUrl(req, rawToken);
-  console.log(`[QR API] Derived reachable remote URL for pairing: "${remoteUrlString}"`);
-
-  try {
-    const dataUrl = await QRCode.toDataURL(remoteUrlString, {
-      margin: 2,
-      scale: 8,
-      color: { dark: '#0f172a', light: '#ffffff' }
-    });
-    console.log(`[QR API] Successfully generated QR code. Base64 length: ${dataUrl.length}`);
-    return res.json({ ok: true, pin, remoteUrl: remoteUrlString, qrDataUrl: dataUrl });
-  } catch (err) {
-    console.error(`[QR API] Error generating QR code for URL "${remoteUrlString}":`, err);
-    return res.status(500).json({ ok: false, error: 'Could not generate QR code.' });
-  }
 });
 
 // Health check endpoint for Render platform monitoring and uptime checks
@@ -712,10 +540,6 @@ app.get('/index.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.get('/remote', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
 app.get('/board', (req, res) => {
   res.sendFile(path.join(__dirname, 'board.html'));
 });
@@ -743,8 +567,6 @@ io.on('connection', (socket) => {
 
       if (role === 'board') {
         console.log(`[Session] Board connected PIN: ${pinStr}`);
-        room.boardConnected = true;
-        io.to(pinStr).emit('board-status', { connected: true });
       } else {
         if (isReconnect || room.hasPhoneConnected) {
           console.log(`[Session] Phone reconnected PIN: ${pinStr}`);
@@ -752,18 +574,14 @@ io.on('connection', (socket) => {
           console.log(`[Session] Phone connected PIN: ${pinStr}`);
           room.hasPhoneConnected = true;
         }
-        // Send current board connection status to the joining phone
-        socket.emit('board-status', { connected: !!room.boardConnected });
       }
 
       socket.emit('room-status', {
         ok: true,
         pin: pinStr,
-        token: room.token,
         pdfUrl: room.pdfUrl,
         currentPage: room.currentPage,
-        totalPages: room.totalPages,
-        boardConnected: !!room.boardConnected
+        totalPages: room.totalPages
       });
     } else {
       socket.emit('room-status', { ok: false, error: 'PIN not found' });
@@ -783,7 +601,6 @@ io.on('connection', (socket) => {
         console.log(`[Session] Phone connected PIN: ${pinStr}`);
         room.hasPhoneConnected = true;
       }
-      socket.emit('board-status', { connected: !!room.boardConnected });
     }
     socket.emit('phone-joined', {
       ok: !!room,
@@ -801,11 +618,6 @@ io.on('connection', (socket) => {
       return;
     }
     socket.join(pinStr);
-    socket.data = socket.data || {};
-    socket.data.joinedPin = pinStr;
-    socket.data.role = 'board';
-    room.boardConnected = true;
-    io.to(pinStr).emit('board-status', { connected: true });
     console.log(`[Session] Board connected PIN: ${pinStr}`);
     socket.emit('board-joined', {
       ok: true,
@@ -891,30 +703,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Fullscreen control — relay to all clients in the room
-  socket.on('fullscreen-command', ({ pin, action }) => {
-    if (pin) {
-      const act = action || 'toggle';
-      io.to(String(pin).trim()).emit('fullscreen-command', { action: act });
-      io.to(String(pin).trim()).emit('request-fullscreen', { action: act });
-    }
-  });
-
-  socket.on('request-fullscreen', ({ pin, action }) => {
-    if (pin) {
-      const act = action || 'toggle';
-      io.to(String(pin).trim()).emit('fullscreen-command', { action: act });
-      io.to(String(pin).trim()).emit('request-fullscreen', { action: act });
-    }
-  });
-
-  // Fullscreen status report from board — relay to phone
-  socket.on('fullscreen-status', ({ pin, isFullscreen }) => {
-    if (pin) {
-      io.to(String(pin).trim()).emit('fullscreen-status', { isFullscreen });
-    }
-  });
-
   // Presentation controls visibility — relay to all clients in the room
   socket.on('presentation-controls', ({ pin, visible }) => {
     if (pin && typeof visible === 'boolean') {
@@ -941,15 +729,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    if (socket.data && socket.data.joinedPin && socket.data.role === 'board') {
-      const pinStr = socket.data.joinedPin;
-      console.log(`[Session] Board disconnected PIN: ${pinStr}`);
-      const room = rooms.get(pinStr);
-      if (room) {
-        room.boardConnected = false;
-      }
-      io.to(pinStr).emit('board-status', { connected: false });
-    }
+    // Sockets may disconnect and reconnect on mobile/tab switch
   });
 });
 
