@@ -2,6 +2,7 @@
  * sync_public.js — SmartBoard Build Script
  *
  * Copies static assets from root → public/ and syncs public/ HTML → root.
+ * Generates remote.html as a direct alias of index.html.
  * If BACKEND_URL is set (e.g. on Vercel), it is injected into the HTML as
  * a synchronous inline <script> so the frontend knows the Render backend URL
  * immediately at runtime — no async fetch race condition.
@@ -80,6 +81,16 @@ htmlFiles.forEach(html => {
     console.warn(`WARNING: public/${html} not found — skipping`);
   }
 });
+
+// Create and sync remote.html as an alias of index.html in both public/ and root
+const indexPublic = path.join(publicDir, 'index.html');
+const remotePublic = path.join(publicDir, 'remote.html');
+const remoteRoot = path.join(rootDir, 'remote.html');
+if (fs.existsSync(indexPublic)) {
+  fs.copyFileSync(indexPublic, remotePublic);
+  fs.copyFileSync(indexPublic, remoteRoot);
+  console.log('Synced index.html → remote.html in public/ and root');
+}
 
 console.log('Build: public assets synced successfully!');
 if (backendUrl) {

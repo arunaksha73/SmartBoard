@@ -1,0 +1,2361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SmartBoard Remote</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(15, 23, 42, 0.78);
+      --card-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 30px rgba(79, 70, 229, 0.15);
+      --border: rgba(255, 255, 255, 0.1);
+      --border-hover: rgba(99, 102, 241, 0.4);
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --accent-light: rgba(99, 102, 241, 0.15);
+      --accent-slate: rgba(255, 255, 255, 0.05);
+      --accent-slate-hover: rgba(255, 255, 255, 0.1);
+      --amber: #f59e0b;
+      --amber-light: rgba(245, 158, 11, 0.12);
+      --danger: #ef4444;
+      --danger-light: rgba(239, 68, 68, 0.15);
+      --success: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100%;
+      max-width: 100%;
+      min-height: 100vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      background-color: #070a12;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 24px 16px 40px;
+      position: relative;
+      background:
+        /* Subtle Digital Grid */
+        linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        /* Ambient Blue & Purple Lighting Glows */
+        radial-gradient(ellipse 900px 500px at 50% -40px, rgba(79, 70, 229, 0.28), transparent 70%),
+        radial-gradient(circle 500px at 90% 80%, rgba(139, 92, 246, 0.12), transparent 60%),
+        radial-gradient(circle 450px at 10% 70%, rgba(56, 189, 248, 0.10), transparent 60%),
+        /* Deep Navy Gradient Base */
+        radial-gradient(1200px 800px at 50% 30%, #0d1527 0%, #070a12 100%);
+      background-size: 36px 36px, 36px 36px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+      background-attachment: fixed;
+      box-sizing: border-box;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 440px;
+      background: var(--card-bg);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 28px;
+      padding: 28px 22px;
+      box-shadow: var(--card-shadow);
+      position: relative;
+      z-index: 1;
+      box-sizing: border-box;
+    }
+
+    /* ── Brand header ── */
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 22px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex-shrink: 1;
+    }
+
+    .brand-logo {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      background: #818cf8;
+      box-shadow: 0 0 12px rgba(129, 140, 248, 0.7);
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #818cf8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .conn-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .conn-status-badge .conn-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      transition: all 0.25s ease;
+    }
+
+    .conn-status-badge.reconnecting {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+    }
+
+    .conn-status-badge.reconnecting .conn-dot {
+      background: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+      animation: pulseConnDot 1s infinite alternate;
+    }
+
+    .conn-status-badge.offline {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #f87171;
+    }
+
+    .conn-status-badge.offline .conn-dot {
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444;
+    }
+
+    @keyframes pulseConnDot {
+      from { opacity: 0.4; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1.2); }
+    }
+
+    .brand-clock {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 3px 8px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 26px;
+      line-height: 1.25;
+      color: #f8fafc;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+
+    p.subtitle {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+
+    /* ── Upload / Dropzone ── */
+    .dropzone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      border: 2px dashed rgba(255, 255, 255, 0.16);
+      border-radius: 20px;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.03);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .dropzone:hover, .dropzone.active {
+      border-color: #818cf8;
+      background: rgba(99, 102, 241, 0.1);
+      box-shadow: 0 0 25px rgba(99, 102, 241, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .icon-box {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      background: rgba(99, 102, 241, 0.18);
+      border: 1px solid rgba(129, 140, 248, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .dropzone:hover .icon-box {
+      transform: scale(1.08);
+      box-shadow: 0 0 28px rgba(129, 140, 248, 0.4);
+    }
+
+    .icon-box svg {
+      width: 26px;
+      height: 26px;
+      stroke: #a5b4fc;
+    }
+
+    .dropzone-label {
+      font-weight: 700;
+      font-size: 15px;
+      color: #f1f5f9;
+      margin-bottom: 4px;
+    }
+
+    .dropzone-sub {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .status-area {
+      margin-top: 24px;
+      text-align: center;
+    }
+
+    .progress-bar {
+      height: 6px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4f46e5, #818cf8);
+      transition: width 0.2s ease;
+      box-shadow: 0 0 10px rgba(129, 140, 248, 0.5);
+    }
+
+    .status-text {
+      font-size: 13px;
+      color: #cbd5e1;
+      font-weight: 500;
+      min-height: 18px;
+    }
+
+    .status-text.error {
+      color: #f87171;
+    }
+
+    /* ── Screen 2: Remote Controls ── */
+    .hidden {
+      display: none !important;
+    }
+
+    .pin-card {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 20px;
+      padding: 22px 18px;
+      text-align: center;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+    }
+
+    .pin-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #fbbf24;
+      margin-bottom: 14px;
+    }
+
+    .pin-digits {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .pin-digit {
+      width: 48px;
+      height: 62px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: #fbbf24;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2);
+    }
+
+    .pin-instruction {
+      font-size: 12px;
+      color: #fde68a;
+      font-weight: 500;
+    }
+
+    .slide-info {
+      text-align: center;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      color: #94a3b8;
+      margin-bottom: 20px;
+      padding: 12px 0;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .slide-info strong {
+      color: #f8fafc;
+      font-size: 17px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .btn-control {
+      width: 100%;
+      padding: 18px 18px;
+      border-radius: 18px;
+      border: none;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .btn-control:active {
+      transform: scale(0.97);
+    }
+
+    .btn-next {
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: #ffffff;
+      box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.45);
+    }
+
+    .btn-next:hover {
+      background: linear-gradient(135deg, #4338ca, #4f46e5);
+      box-shadow: 0 12px 28px -5px rgba(79, 70, 229, 0.6);
+    }
+
+    .btn-prev {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f1f5f9;
+    }
+
+    .btn-prev:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ── Hide / Show Smartboard Controls Button ── */
+    .btn-toggle-controls {
+      width: 100%;
+      padding: 16px 18px;
+      margin-bottom: 24px;
+      border-radius: 18px;
+      border: 1.5px solid rgba(99, 102, 241, 0.3);
+      background: rgba(99, 102, 241, 0.08);
+      color: #a5b4fc;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.18s ease;
+      user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-toggle-controls:hover {
+      background: rgba(99, 102, 241, 0.18);
+      border-color: rgba(129, 140, 248, 0.6);
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-toggle-controls:active {
+      transform: scale(0.97);
+      background: rgba(99, 102, 241, 0.28);
+    }
+
+    /* When controls are hidden on the board: amber tint to indicate action available */
+    .btn-toggle-controls.controls-off {
+      border-color: rgba(251, 191, 36, 0.45);
+      background: rgba(251, 191, 36, 0.08);
+      color: #fcd34d;
+    }
+
+    .btn-toggle-controls.controls-off:hover {
+      background: rgba(251, 191, 36, 0.18);
+      border-color: rgba(251, 191, 36, 0.7);
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(251, 191, 36, 0.3);
+    }
+
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .ctrl-section {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 16px 18px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .section-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #818cf8;
+      margin-bottom: 14px;
+    }
+
+    .brightness-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .brightness-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .brightness-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: #818cf8;
+      min-width: 38px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1;
+      height: 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #6366f1;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.6);
+      border: 3px solid #ffffff;
+      transition: transform 0.15s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:active {
+      transform: scale(1.2);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #6366f1;
+      cursor: pointer;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.6);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-theme {
+      flex: 1;
+      padding: 13px 8px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .btn-theme:active {
+      transform: scale(0.96);
+    }
+
+    .btn-theme.day-active {
+      background: rgba(251, 191, 36, 0.15);
+      border-color: #fbbf24;
+      color: #fde68a;
+      box-shadow: 0 0 16px rgba(251, 191, 36, 0.2);
+    }
+
+    .btn-theme.night-active {
+      background: rgba(79, 70, 229, 0.25);
+      border-color: #818cf8;
+      color: #e0e7ff;
+      box-shadow: 0 0 16px rgba(129, 140, 248, 0.25);
+    }
+
+    .zoom-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn-zoom {
+      flex: 1;
+      padding: 13px 8px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: #f1f5f9;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .btn-zoom:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-zoom:active {
+      transform: scale(0.94);
+    }
+
+    .btn-zoom.zoom-in {
+      background: rgba(99, 102, 241, 0.18);
+      border-color: rgba(129, 140, 248, 0.4);
+      color: #c7d2fe;
+    }
+
+    .btn-zoom.zoom-out {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .btn-zoom.zoom-reset {
+      background: rgba(255, 255, 255, 0.04);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    .btn-exit {
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1.5px solid rgba(239, 68, 68, 0.3);
+      background: rgba(239, 68, 68, 0.12);
+      color: #fca5a5;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .btn-exit:hover {
+      background: rgba(239, 68, 68, 0.22);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    .btn-exit:active {
+      transform: scale(0.97);
+    }
+
+    /* ── Keep Screen On – Toggle Switch ── */
+    .wakelock-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .wakelock-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .wakelock-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 3px;
+    }
+
+    .wakelock-status {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: #64748b;
+      transition: color 0.25s ease;
+    }
+
+    .wakelock-status.on  { color: #34d399; }
+    .wakelock-status.off { color: #64748b; }
+    .wakelock-status.unsupported { color: #f59e0b; }
+
+    /* iOS-style toggle pill */
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 28px;
+      flex-shrink: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      transition: background 0.25s ease, border-color 0.25s ease;
+    }
+
+    .toggle-switch input:checked + .toggle-track {
+      background: rgba(52, 211, 153, 0.35);
+      border-color: #34d399;
+      box-shadow: 0 0 12px rgba(52, 211, 153, 0.4);
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #94a3b8;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.25s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    }
+
+    .toggle-switch input:checked ~ .toggle-thumb {
+      transform: translateX(22px);
+      background: #34d399;
+    }
+
+    .toggle-switch:focus-within .toggle-track {
+      outline: 2px solid rgba(99, 102, 241, 0.6);
+      outline-offset: 2px;
+    }
+
+    .btn-reset {
+      margin-top: 20px;
+      background: transparent;
+      border: none;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      width: 100%;
+      padding: 6px;
+      transition: color 0.2s ease;
+    }
+
+    .btn-reset:hover {
+      color: #818cf8;
+    }
+    /* ── Professional Footer ── */
+    .app-footer {
+      margin-top: 28px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 0 12px;
+      width: 100%;
+      max-width: 440px;
+      user-select: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-creator {
+      font-size: 13px;
+      font-weight: 500;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.01em;
+    }
+
+    .footer-creator .creator-name {
+      font-weight: 700;
+      color: #f1f5f9;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .footer-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .footer-btn svg {
+      transition: transform 0.2s ease, stroke 0.2s ease;
+      flex-shrink: 0;
+      stroke: #cbd5e1;
+    }
+
+    .footer-btn:hover {
+      color: #ffffff;
+      border-color: rgba(99, 102, 241, 0.5);
+      background: rgba(79, 70, 229, 0.25);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px -4px rgba(79, 70, 229, 0.4);
+    }
+
+    .footer-btn:hover svg {
+      stroke: #ffffff;
+      transform: scale(1.12);
+    }
+
+    .footer-btn:active {
+      transform: translateY(0) scale(0.96);
+    }
+
+    /* ── Ambient Interactive Doodle Canvas ── */
+    #ambientDoodleCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      max-width: 100vw;
+      max-height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    /* ── Comprehensive Mobile Breakpoints ── */
+    @media (max-width: 480px) {
+      body {
+        padding: 16px 12px 32px;
+      }
+      .container {
+        padding: 24px 16px;
+        border-radius: 24px;
+      }
+      h1 {
+        font-size: 22px;
+      }
+      .btn-control {
+        padding: 16px 14px;
+        font-size: 15px;
+      }
+      .ctrl-section {
+        padding: 14px 14px;
+      }
+      .footer-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      body {
+        padding: 12px 8px 24px;
+      }
+      .container {
+        padding: 20px 12px;
+        border-radius: 20px;
+      }
+      .brand {
+        gap: 6px;
+        margin-bottom: 16px;
+      }
+      .brand-title {
+        font-size: 11px;
+        letter-spacing: 0.06em;
+      }
+      .conn-status-badge {
+        font-size: 9.5px;
+        padding: 2px 6px;
+      }
+      .brand-clock {
+        font-size: 9.5px;
+        padding: 2px 6px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+      p.subtitle {
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+      .pin-digit {
+        width: 40px;
+        height: 52px;
+        font-size: 26px;
+        border-radius: 10px;
+      }
+      .pin-digits {
+        gap: 6px;
+      }
+      .btn-theme, .btn-zoom {
+        padding: 11px 6px;
+        font-size: 12px;
+      }
+      .zoom-row, .btn-row {
+        gap: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Interactive Glowing Doodle Particle Canvas -->
+  <canvas id="ambientDoodleCanvas"></canvas>
+
+  <div class="container">
+    <div class="brand">
+      <div class="brand-left">
+        <div class="brand-logo"></div>
+        <div class="brand-title">Smartboard Remote</div>
+      </div>
+      <div class="brand-right">
+        <div class="conn-status-badge" id="connStatus">
+          <span class="conn-dot"></span>
+          <span id="connLabel">Connected</span>
+        </div>
+        <div class="brand-clock" id="remoteClock">--:-- --</div>
+      </div>
+    </div>
+
+    <!-- SCREEN 1: UPLOAD -->
+    <div id="screen-upload">
+      <h1>Control your presentation from your pocket.</h1>
+      <p class="subtitle">Upload a presentation or document to generate a smartboard pairing code.</p>
+
+      <label class="dropzone" id="dropzone">
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+        </div>
+        <div class="dropzone-label">Tap to upload presentation or document</div>
+        <div class="dropzone-sub">PDF &bull; PPT &bull; PPTX &bull; DOC &bull; DOCX &mdash; up to 150MB</div>
+        <input type="file" id="fileInput" accept="application/pdf,.pdf,.ppt,.pptx,.doc,.docx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+      </label>
+
+      <div class="status-area">
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="status-text" id="statusText">Ready for file selection.</div>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: REMOTE CONTROLLER -->
+    <div id="screen-remote" class="hidden">
+
+      <!-- PIN display -->
+      <div class="pin-card">
+        <div class="pin-label">Smartboard Pairing Code</div>
+        <div class="pin-digits" id="pinContainer">
+          <!-- Digits rendered by JS -->
+        </div>
+        <div class="pin-instruction">Enter this 4-digit code on the classroom board screen.</div>
+      </div>
+
+      <!-- Slide counter -->
+      <div class="slide-info" id="slideInfo">
+        Slide <strong id="currentSlideDisplay">1</strong> / <span id="totalSlidesDisplay">1</span>
+      </div>
+
+      <!-- Primary slide navigation -->
+      <div class="btn-group">
+        <button class="btn-control btn-next" id="btnNext">
+          <span>NEXT SLIDE</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+        <button class="btn-control btn-prev" id="btnPrev">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          <span>PREVIOUS SLIDE</span>
+        </button>
+      </div>
+
+      <!-- Hide / Show SmartBoard Controls Button -->
+      <button class="btn-toggle-controls" id="btnToggleControls" aria-label="Toggle SmartBoard presentation controls">
+        <svg id="toggleCtrlIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span id="toggleCtrlLabel">Hide Smartboard Controls</span>
+      </button>
+
+      <!-- Extended controls panel -->
+      <div class="controls-panel">
+
+        <!-- BRIGHTNESS -->
+        <div class="ctrl-section">
+          <div class="section-label">☀️ &nbsp;Brightness</div>
+          <div class="brightness-row">
+            <span class="brightness-icon">🌑</span>
+            <input type="range" id="brightnessSlider" min="20" max="100" value="100" step="5" />
+            <span class="brightness-icon">☀️</span>
+            <span class="brightness-value" id="brightnessValue">100%</span>
+          </div>
+        </div>
+
+        <!-- THEME -->
+        <div class="ctrl-section">
+          <div class="section-label">🎨 &nbsp;Display Theme</div>
+          <div class="btn-row">
+            <button class="btn-theme day-active" id="btnDay">☀️ Day Mode</button>
+            <button class="btn-theme" id="btnNight">🌙 Night Mode</button>
+          </div>
+        </div>
+
+        <!-- ZOOM -->
+        <div class="ctrl-section">
+          <div class="section-label">🔍 &nbsp;Zoom</div>
+          <div class="zoom-row">
+            <button class="btn-zoom zoom-out" id="btnZoomOut">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Zoom Out
+            </button>
+            <button class="btn-zoom zoom-reset" id="btnZoomReset">Reset</button>
+            <button class="btn-zoom zoom-in" id="btnZoomIn">
+              Zoom In
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- KEEP SCREEN ON -->
+        <div class="ctrl-section">
+          <div class="section-label">☀ &nbsp;Display</div>
+          <div class="wakelock-row">
+            <div class="wakelock-info">
+              <div class="wakelock-title">Keep Screen On</div>
+              <div class="wakelock-status off" id="wakelockStatus">Screen may turn off</div>
+            </div>
+            <label class="toggle-switch" aria-label="Keep Screen On">
+              <input type="checkbox" id="wakelockToggle" />
+              <span class="toggle-track"></span>
+              <span class="toggle-thumb"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- EXIT SESSION -->
+        <div class="ctrl-section">
+          <div class="section-label">⚡ &nbsp;Session</div>
+          <button class="btn-exit" id="btnExit">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Exit Presentation
+          </button>
+        </div>
+
+      </div><!-- end controls-panel -->
+
+      <button class="btn-reset" id="btnReset">Upload another presentation</button>
+    </div><!-- end screen-remote -->
+  </div><!-- end container -->
+
+  <!-- Professional Footer -->
+  <footer class="app-footer">
+    <div class="footer-creator">
+      Created by <span class="creator-name">Arunaksha Das</span>
+    </div>
+    <div class="footer-links">
+      <a href="https://www.instagram.com/mr.ad_8974" target="_blank" rel="noopener noreferrer" class="footer-btn" aria-label="Instagram profile of Arunaksha Das">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+        </svg>
+        <span>Instagram</span>
+      </a>
+      <a href="https://github.com/arunaksha73" target="_blank" rel="noopener noreferrer" class="footer-btn" aria-label="GitHub profile of Arunaksha Das">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+        </svg>
+        <span>GitHub</span>
+      </a>
+      <a href="https://www.linkedin.com/in/arunaksha-das" target="_blank" rel="noopener noreferrer" class="footer-btn" aria-label="LinkedIn profile of Arunaksha Das">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+          <rect x="2" y="9" width="4" height="12"></rect>
+          <circle cx="4" cy="4" r="2"></circle>
+        </svg>
+        <span>LinkedIn</span>
+      </a>
+    </div>
+  </footer>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    // Resolve backend URL synchronously.
+    // window.SMARTBOARD_BACKEND_URL is injected at build time by scripts/sync_public.js
+    // when BACKEND_URL env var is set (e.g. on Vercel pointing to Render).
+    // Falls back to window.location.origin for local development.
+    var SERVER_URL = (
+      (typeof window.SMARTBOARD_BACKEND_URL === 'string' && window.SMARTBOARD_BACKEND_URL.trim()) ||
+      window.location.origin
+    ).replace(/\/$/, '');
+  </script>
+
+    // ── DOM references ──
+    const fileInput      = document.getElementById('fileInput');
+    const progressBar    = document.getElementById('progressBar');
+    const progressFill   = document.getElementById('progressFill');
+    const statusText     = document.getElementById('statusText');
+    const screenUpload   = document.getElementById('screen-upload');
+    const screenRemote   = document.getElementById('screen-remote');
+    const pinContainer   = document.getElementById('pinContainer');
+
+    const currentSlideDisplay = document.getElementById('currentSlideDisplay');
+    const totalSlidesDisplay  = document.getElementById('totalSlidesDisplay');
+
+    const btnNext        = document.getElementById('btnNext');
+    const btnPrev        = document.getElementById('btnPrev');
+    const btnReset       = document.getElementById('btnReset');
+    const btnExit        = document.getElementById('btnExit');
+    const btnToggleControls = document.getElementById('btnToggleControls');
+    const toggleCtrlLabel   = document.getElementById('toggleCtrlLabel');
+    const toggleCtrlIcon    = document.getElementById('toggleCtrlIcon');
+
+    const brightnessSlider = document.getElementById('brightnessSlider');
+    const brightnessValue  = document.getElementById('brightnessValue');
+    const btnDay           = document.getElementById('btnDay');
+    const btnNight         = document.getElementById('btnNight');
+    const btnZoomIn        = document.getElementById('btnZoomIn');
+    const btnZoomOut       = document.getElementById('btnZoomOut');
+    const btnZoomReset     = document.getElementById('btnZoomReset');
+
+    const connStatus       = document.getElementById('connStatus');
+    const connLabel        = document.getElementById('connLabel');
+
+    // ── State ──
+    let socket       = null;
+    let currentPin   = null;
+    let boardControlsVisible = true; // tracks SmartBoard presentation controls state
+    let currentSlide = 1;
+    let totalSlides  = 1;
+
+    // ── Session Storage Helpers ──
+    const STORAGE_KEY_PIN      = 'smartboard_remote_pin';
+    const STORAGE_KEY_SLIDE    = 'smartboard_remote_slide';
+    const STORAGE_KEY_TOTAL    = 'smartboard_remote_total';
+    const STORAGE_KEY_ACTIVE   = 'smartboard_remote_active';
+    const STORAGE_KEY_WAKELOCK = 'smartboard_remote_wakelock';
+
+    function saveSession(pin, slide, total) {
+      if (!pin) return;
+      try {
+        localStorage.setItem(STORAGE_KEY_PIN, pin);
+        localStorage.setItem(STORAGE_KEY_SLIDE, String(slide || 1));
+        localStorage.setItem(STORAGE_KEY_TOTAL, String(total || 1));
+        localStorage.setItem(STORAGE_KEY_ACTIVE, 'true');
+      } catch (e) {
+        console.warn('Could not save session to localStorage:', e);
+      }
+    }
+
+    function clearSession() {
+      try {
+        localStorage.removeItem(STORAGE_KEY_PIN);
+        localStorage.removeItem(STORAGE_KEY_SLIDE);
+        localStorage.removeItem(STORAGE_KEY_TOTAL);
+        localStorage.removeItem(STORAGE_KEY_ACTIVE);
+      } catch (e) {
+        console.warn('Could not clear session from localStorage:', e);
+      }
+    }
+
+    function getSavedSession() {
+      try {
+        const pin = localStorage.getItem(STORAGE_KEY_PIN);
+        const active = localStorage.getItem(STORAGE_KEY_ACTIVE) === 'true';
+        const slide = parseInt(localStorage.getItem(STORAGE_KEY_SLIDE), 10) || 1;
+        const total = parseInt(localStorage.getItem(STORAGE_KEY_TOTAL), 10) || 1;
+        return (pin && active) ? { pin, slide, total } : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // ── Connection Status Indicator ──
+    function setConnectionStatus(state) {
+      if (!connStatus || !connLabel) return;
+      connStatus.className = 'conn-status-badge';
+      if (state === 'connected') {
+        connStatus.classList.add('connected');
+        connLabel.textContent = 'Connected';
+      } else if (state === 'reconnecting') {
+        connStatus.classList.add('reconnecting');
+        connLabel.textContent = 'Reconnecting...';
+      } else if (state === 'offline') {
+        connStatus.classList.add('offline');
+        connLabel.textContent = 'Offline';
+      }
+    }
+
+    // ── Slide info display ──
+    function updateSlideInfo() {
+      if (currentSlideDisplay) currentSlideDisplay.textContent = currentSlide;
+      if (totalSlidesDisplay) totalSlidesDisplay.textContent  = totalSlides;
+    }
+
+    // ── Persistent Socket.IO Initialization ──
+    function initSocket() {
+      if (socket) return socket;
+
+      socket = io(SERVER_URL, {
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+        transports: ['polling', 'websocket']
+      });
+
+      socket.on('connect', () => {
+        console.log('[Socket Connected] ID:', socket.id);
+        setConnectionStatus('connected');
+        if (currentPin) {
+          socket.emit('join-room', { pin: currentPin, role: 'phone' });
+        }
+      });
+
+      socket.on('disconnect', (reason) => {
+        console.log('[Socket Disconnected]:', reason);
+        if (!navigator.onLine) {
+          setConnectionStatus('offline');
+        } else {
+          setConnectionStatus('reconnecting');
+        }
+      });
+
+      socket.on('reconnect_attempt', () => {
+        setConnectionStatus('reconnecting');
+      });
+
+      socket.on('reconnect', (attempt) => {
+        console.log('[Socket Reconnected] on attempt', attempt);
+        setConnectionStatus('connected');
+        if (currentPin) {
+          socket.emit('join-room', { pin: currentPin, role: 'phone' });
+        }
+      });
+
+      socket.on('reconnect_error', () => {
+        setConnectionStatus(!navigator.onLine ? 'offline' : 'reconnecting');
+      });
+
+      // Room status: authoritative synchronization from server
+      socket.on('room-status', (data) => {
+        if (data && data.ok) {
+          if (data.currentPage !== undefined) currentSlide = data.currentPage;
+          if (data.totalPages !== undefined) totalSlides = data.totalPages;
+          updateSlideInfo();
+          if (currentPin) saveSession(currentPin, currentSlide, totalSlides);
+        } else if (data && data.error && currentPin) {
+          console.warn('[Room Status Error]:', data.error);
+          // If the presentation room was closed on the server, reset gracefully
+          clearSession();
+          resetToUploadScreen();
+        }
+      });
+
+      // Slide sync: update phone display when any client changes slide
+      socket.on('slide-command', (data) => {
+        if (data && data.page !== undefined) {
+          currentSlide = data.page;
+          if (data.totalPages) totalSlides = data.totalPages;
+          updateSlideInfo();
+          if (currentPin) saveSession(currentPin, currentSlide, totalSlides);
+        }
+      });
+
+      // Total pages loaded by board
+      socket.on('total-pages', (data) => {
+        if (data && data.totalPages) {
+          totalSlides = data.totalPages;
+          updateSlideInfo();
+          if (currentPin) saveSession(currentPin, currentSlide, totalSlides);
+        }
+      });
+
+      // Sync phone button when board hides/shows its controls
+      socket.on('presentation-controls', (data) => {
+        if (data && typeof data.visible === 'boolean') {
+          updateToggleCtrlBtn(data.visible);
+        }
+      });
+
+      // If board exits, reset phone too
+      socket.on('exit-presentation', () => {
+        clearSession();
+        resetToUploadScreen();
+      });
+
+      return socket;
+    }
+
+    // ── File selection & upload ──
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) uploadFile(fileInput.files[0]);
+    });
+
+    // Supported extensions for client-side validation
+    const ALLOWED_EXTS = new Set(['.pdf', '.ppt', '.pptx', '.doc', '.docx']);
+    const CONVERT_EXTS = new Set(['.ppt', '.pptx', '.doc', '.docx']);
+
+    async function uploadFile(file) {
+      if (!file) return;
+
+      // Client-side extension validation
+      const origExt = (file.name || '').slice((file.name || '').lastIndexOf('.')).toLowerCase();
+      if (!ALLOWED_EXTS.has(origExt)) {
+        setStatus(`Unsupported file type: "${origExt}". Please choose a PDF, PPT, PPTX, DOC, or DOCX file.`, true);
+        return;
+      }
+
+      const isConversion = CONVERT_EXTS.has(origExt);
+      const formData = new FormData();
+      formData.append('pdf', file);
+
+      progressBar.style.display = 'block';
+      progressFill.style.width = '15%';
+      setStatus('Uploading...');
+
+      try {
+        const response = await fetch(`${SERVER_URL}/upload`, { method: 'POST', body: formData });
+
+        // For non-PDF files, show conversion in progress while waiting for server
+        if (isConversion) {
+          progressFill.style.width = '50%';
+          setStatus('Converting to PDF...');
+        } else {
+          progressFill.style.width = '60%';
+        }
+
+        progressFill.style.width = '85%';
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Server HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.ok && data.pin) {
+          progressFill.style.width = '95%';
+          setStatus('Preparing SmartBoard...');
+          await new Promise(r => setTimeout(r, 400));
+          progressFill.style.width = '100%';
+          setStatus('Ready!');
+          initRemoteScreen(data.pin);
+        } else {
+          throw new Error(data.error || 'Upload failed');
+        }
+      } catch (err) {
+        console.error('Upload Error:', err);
+        setStatus(`Upload failed: ${err.message}`, true);
+        progressFill.style.width = '0%';
+      }
+    }
+
+    function setStatus(msg, isError = false) {
+      statusText.textContent = msg;
+      statusText.classList.toggle('error', isError);
+    }
+
+    // ── Remote screen init & restoration ──
+    function initRemoteScreen(pin, initialSlide = 1, initialTotal = 1) {
+      currentPin   = pin;
+      currentSlide = initialSlide;
+      totalSlides  = initialTotal;
+      updateSlideInfo();
+      saveSession(pin, currentSlide, totalSlides);
+
+      // Render PIN digits
+      pinContainer.innerHTML = '';
+      pin.split('').forEach(digit => {
+        const div = document.createElement('div');
+        div.className = 'pin-digit';
+        div.textContent = digit;
+        pinContainer.appendChild(div);
+      });
+
+      // Switch screens
+      screenUpload.classList.add('hidden');
+      screenRemote.classList.remove('hidden');
+
+      // Reset control states
+      brightnessSlider.value = 100;
+      brightnessValue.textContent = '100%';
+      btnDay.className = 'btn-theme day-active';
+      btnNight.className = 'btn-theme';
+
+      // Ensure socket is initialized and joins room
+      const s = initSocket();
+      if (s.connected) {
+        s.emit('join-room', { pin, role: 'phone' });
+      }
+    }
+
+    // ── Haptic feedback ──
+    function triggerHaptic(duration = 40) {
+      if (navigator.vibrate) navigator.vibrate(duration);
+    }
+
+    // ── Slide commands ──
+    function sendSlideCommand(action) {
+      triggerHaptic();
+      if (socket && currentPin) {
+        socket.emit('slide-command', { pin: currentPin, action });
+      }
+    }
+
+    btnNext.addEventListener('click', () => sendSlideCommand('NEXT'));
+    btnPrev.addEventListener('click', () => sendSlideCommand('PREV'));
+
+    // ── Brightness ──
+    brightnessSlider.addEventListener('input', () => {
+      const val = parseInt(brightnessSlider.value, 10);
+      brightnessValue.textContent = `${val}%`;
+      btnDay.className = 'btn-theme day-active';
+      btnNight.className = 'btn-theme';
+      if (socket && currentPin) {
+        socket.emit('brightness-command', { pin: currentPin, brightness: val });
+      }
+    });
+
+    // ── Theme ──
+    btnDay.addEventListener('click', () => {
+      triggerHaptic(30);
+      btnDay.className = 'btn-theme day-active';
+      btnNight.className = 'btn-theme';
+      brightnessSlider.value = 100;
+      brightnessValue.textContent = '100%';
+      if (socket && currentPin) {
+        socket.emit('theme-command', { pin: currentPin, theme: 'day' });
+      }
+    });
+
+    btnNight.addEventListener('click', () => {
+      triggerHaptic(30);
+      btnNight.className = 'btn-theme night-active';
+      btnDay.className = 'btn-theme';
+      if (socket && currentPin) {
+        socket.emit('theme-command', { pin: currentPin, theme: 'night' });
+      }
+    });
+
+    // ── Zoom ──
+    btnZoomIn.addEventListener('click', () => {
+      triggerHaptic(25);
+      if (socket && currentPin) socket.emit('zoom-command', { pin: currentPin, action: 'in' });
+    });
+
+    btnZoomOut.addEventListener('click', () => {
+      triggerHaptic(25);
+      if (socket && currentPin) socket.emit('zoom-command', { pin: currentPin, action: 'out' });
+    });
+
+    btnZoomReset.addEventListener('click', () => {
+      triggerHaptic(25);
+      if (socket && currentPin) socket.emit('zoom-command', { pin: currentPin, action: 'reset' });
+    });
+
+    // ── Screen Wake Lock (Keep Screen On) ──
+    // Uses the native Screen Wake Lock API — SSR/React/Next.js compatible.
+    // https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API
+    const wakelockToggle = typeof document !== 'undefined' ? document.getElementById('wakelockToggle') : null;
+    const wakelockStatus = typeof document !== 'undefined' ? document.getElementById('wakelockStatus') : null;
+
+    function isWakeLockSupported() {
+      return typeof navigator !== 'undefined' && 'wakeLock' in navigator && typeof navigator.wakeLock?.request === 'function';
+    }
+
+    const WAKELOCK_SUPPORTED = isWakeLockSupported();
+
+    let wakeLockSentinel   = null;  // Holds active WakeLockSentinel, or null
+    let wakelockEnabled    = false; // User preference (persisted in localStorage)
+    let hasUserInteracted  = false; // Tracks if user has interacted with the page
+    let isAcquiringLock    = false; // Prevents overlapping request calls
+
+    // Update status text & indicator class based on true active state
+    function setWakelockStatusUI(overrideState) {
+      if (!wakelockStatus || !wakelockToggle) return;
+
+      if (!WAKELOCK_SUPPORTED) {
+        wakelockStatus.textContent = 'Not supported by this browser';
+        wakelockStatus.className   = 'wakelock-status unsupported';
+        wakelockToggle.disabled    = true;
+        wakelockToggle.checked     = false;
+        return;
+      }
+
+      wakelockToggle.disabled = false;
+
+      const isLockActive = (overrideState === 'active') || (wakeLockSentinel !== null && !wakeLockSentinel.released);
+
+      if (isLockActive) {
+        wakelockStatus.textContent = 'Screen will stay on';
+        wakelockStatus.className   = 'wakelock-status on';
+        wakelockToggle.checked     = true;
+      } else {
+        wakelockStatus.textContent = 'Screen may turn off';
+        wakelockStatus.className   = 'wakelock-status off';
+        wakelockToggle.checked     = wakelockEnabled;
+      }
+    }
+
+    // Request native Screen Wake Lock
+    async function requestWakeLock() {
+      if (!isWakeLockSupported() || !wakelockEnabled) {
+        setWakelockStatusUI('off');
+        return;
+      }
+
+      // Do not request if document is hidden
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+        return;
+      }
+
+      // If lock is already active and valid, keep active UI and return
+      if (wakeLockSentinel && !wakeLockSentinel.released) {
+        setWakelockStatusUI('active');
+        return;
+      }
+
+      if (isAcquiringLock) return;
+      isAcquiringLock = true;
+
+      try {
+        const sentinel = await navigator.wakeLock.request('screen');
+        wakeLockSentinel = sentinel;
+        console.log('[WakeLock] Screen wake lock acquired.');
+
+        // Update UI only when lock is actually acquired
+        setWakelockStatusUI('active');
+
+        // Listen for release event (system revoke, tab switch, minimize)
+        sentinel.addEventListener('release', () => {
+          console.log('[WakeLock] Sentinel released.');
+          if (wakeLockSentinel === sentinel) {
+            wakeLockSentinel = null;
+          }
+          if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+            setWakelockStatusUI('off');
+          }
+        });
+      } catch (err) {
+        wakeLockSentinel = null;
+        setWakelockStatusUI('off');
+
+        // Handle specific standard rejection reasons gracefully
+        switch (err.name) {
+          case 'NotAllowedError':
+            console.warn('[WakeLock] NotAllowedError: Wake lock request denied (e.g. battery saver mode, system policy, or permission restriction):', err.message);
+            break;
+          case 'SecurityError':
+            console.warn('[WakeLock] SecurityError: Wake lock denied by security policy (e.g. non-secure origin or cross-origin iframe):', err.message);
+            break;
+          case 'AbortError':
+            console.warn('[WakeLock] AbortError: Wake lock request was aborted:', err.message);
+            break;
+          default:
+            console.warn(`[WakeLock] Could not acquire (${err.name || 'Error'}):`, err.message);
+            break;
+        }
+      } finally {
+        isAcquiringLock = false;
+      }
+    }
+
+    // Release native Screen Wake Lock
+    async function releaseWakeLock() {
+      if (wakeLockSentinel && !wakeLockSentinel.released) {
+        try {
+          await wakeLockSentinel.release();
+          console.log('[WakeLock] Released.');
+        } catch (err) {
+          console.warn('[WakeLock] Error releasing sentinel:', err.message);
+        }
+      }
+      wakeLockSentinel = null;
+      setWakelockStatusUI('off');
+    }
+
+    // Initialize Wake Lock state and lifecycle event listeners
+    function initWakeLock() {
+      if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+      if (!WAKELOCK_SUPPORTED) {
+        setWakelockStatusUI('unsupported');
+        return;
+      }
+
+      // Restore saved user preference from localStorage (off by default if unset)
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_WAKELOCK);
+        if (saved === 'true') {
+          wakelockEnabled = true;
+          if (wakelockToggle) wakelockToggle.checked = true;
+        } else {
+          wakelockEnabled = false;
+          if (wakelockToggle) wakelockToggle.checked = false;
+        }
+      } catch (_) {
+        wakelockEnabled = false;
+      }
+
+      // Initial UI display (OFF until actual lock acquisition)
+      setWakelockStatusUI('off');
+
+      // Helper to handle user gesture
+      function onUserGesture() {
+        hasUserInteracted = true;
+        if (wakelockEnabled && (!wakeLockSentinel || wakeLockSentinel.released)) {
+          requestWakeLock();
+        }
+      }
+
+      // User interaction listeners
+      ['click', 'touchstart', 'keydown', 'pointerdown'].forEach((evt) => {
+        document.addEventListener(evt, onUserGesture, { passive: true });
+      });
+
+      // Visibility change: reacquire wake lock when tab/app returns to foreground
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          if (wakelockEnabled && hasUserInteracted) {
+            requestWakeLock();
+          }
+        }
+      });
+
+      // Release wake lock when page unloads or is hidden
+      window.addEventListener('pagehide', () => {
+        releaseWakeLock();
+      });
+      window.addEventListener('beforeunload', () => {
+        releaseWakeLock();
+      });
+
+      // User toggle switch listener
+      if (wakelockToggle) {
+        wakelockToggle.addEventListener('change', async () => {
+          if (typeof triggerHaptic === 'function') triggerHaptic(30);
+          hasUserInteracted = true;
+          wakelockEnabled = wakelockToggle.checked;
+
+          try {
+            localStorage.setItem(STORAGE_KEY_WAKELOCK, String(wakelockEnabled));
+          } catch (_) {}
+
+          if (wakelockEnabled) {
+            await requestWakeLock();
+          } else {
+            await releaseWakeLock();
+          }
+        });
+      }
+    }
+
+    initWakeLock();
+
+    // ── Hide / Show SmartBoard Presentation Controls ──
+    // Eye-open SVG path (controls visible)
+    const EYE_OPEN_PATH = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+    // Eye-closed SVG path (controls hidden)
+    const EYE_CLOSED_PATH = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+
+    function updateToggleCtrlBtn(visible) {
+      boardControlsVisible = visible;
+      if (visible) {
+        toggleCtrlLabel.textContent = 'Hide Smartboard Controls';
+        toggleCtrlIcon.innerHTML = EYE_OPEN_PATH;
+        btnToggleControls.classList.remove('controls-off');
+      } else {
+        toggleCtrlLabel.textContent = 'Show Smartboard Controls';
+        toggleCtrlIcon.innerHTML = EYE_CLOSED_PATH;
+        btnToggleControls.classList.add('controls-off');
+      }
+    }
+
+    btnToggleControls.addEventListener('click', () => {
+      triggerHaptic(35);
+      const next = !boardControlsVisible;
+      updateToggleCtrlBtn(next);
+      if (socket && currentPin) {
+        socket.emit('presentation-controls', { pin: currentPin, visible: next });
+      }
+    });
+
+    // ── Exit presentation ──
+    btnExit.addEventListener('click', () => {
+      triggerHaptic(60);
+      if (socket && currentPin) {
+        socket.emit('exit-presentation', { pin: currentPin });
+      }
+      clearSession();
+      resetToUploadScreen();
+    });
+
+    function resetToUploadScreen() {
+      releaseWakeLock();
+      currentPin   = null;
+      currentSlide = 1;
+      totalSlides  = 1;
+      // Reset SmartBoard controls button state for next session
+      updateToggleCtrlBtn(true);
+      screenRemote.classList.add('hidden');
+      screenUpload.classList.remove('hidden');
+      fileInput.value = '';
+      progressBar.style.display = 'none';
+      progressFill.style.width = '0%';
+      setStatus('Ready for file selection.');
+    }
+
+    // ── Upload another (soft reset) ──
+    btnReset.addEventListener('click', () => {
+      clearSession();
+      currentPin = null;
+      screenRemote.classList.add('hidden');
+      screenUpload.classList.remove('hidden');
+      fileInput.value = '';
+      progressBar.style.display = 'none';
+      progressFill.style.width = '0%';
+      setStatus('Ready for file selection.');
+    });
+
+    // ── Visibility & Focus Management (for phone screen off & tab switching) ──
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[Page Visible] Checking connection and room status...');
+        const saved = getSavedSession();
+        if (saved) {
+          currentPin = saved.pin;
+          currentSlide = saved.slide;
+          totalSlides = saved.total;
+          updateSlideInfo();
+
+          if (!socket) {
+            initSocket();
+          } else if (!socket.connected) {
+            setConnectionStatus('reconnecting');
+            socket.connect();
+          } else {
+            socket.emit('join-room', { pin: currentPin, role: 'phone' });
+          }
+        }
+      }
+    });
+
+    window.addEventListener('focus', () => {
+      if (currentPin && socket) {
+        if (!socket.connected) {
+          socket.connect();
+        } else {
+          socket.emit('join-room', { pin: currentPin, role: 'phone' });
+        }
+      }
+    });
+
+    // ── Network Online/Offline Listeners ──
+    window.addEventListener('online', () => {
+      console.log('[Network Online]');
+      setConnectionStatus('reconnecting');
+      if (socket) {
+        socket.connect();
+        if (currentPin) socket.emit('join-room', { pin: currentPin, role: 'phone' });
+      } else {
+        initSocket();
+      }
+    });
+
+    window.addEventListener('offline', () => {
+      console.log('[Network Offline]');
+      setConnectionStatus('offline');
+    });
+
+    // ── Auto-Restore Session on Page Load ──
+    (function restoreActiveSessionOnLoad() {
+      const saved = getSavedSession();
+      if (saved) {
+        console.log('[Restoring Presentation Session] PIN:', saved.pin, 'Slide:', saved.slide);
+        initRemoteScreen(saved.pin, saved.slide, saved.total);
+      } else {
+        initSocket();
+      }
+    })();
+
+    // ── Live Clock & Date ──
+    function updateLiveClock() {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true });
+      const clockEl = document.getElementById('remoteClock');
+      if (clockEl) clockEl.textContent = `${dateStr} • ${timeStr}`;
+    }
+
+    updateLiveClock();
+    setInterval(updateLiveClock, 1000);
+
+    // ── Interactive Continuous Floating Digital Doodle Wallpaper Engine ──
+    (function initAmbientDoodleBackground() {
+      const canvas = document.getElementById('ambientDoodleCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      let width = 0;
+      let height = 0;
+      let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      const mouse = { x: -1000, y: -1000, active: false, radius: 140 };
+      const ripples = [];
+      const burstParticles = [];
+      const doodles = [];
+
+      // 9 distinct futuristic doodle shapes
+      const shapeTypes = ['circle', 'rounded-square', 'spark', 'cross', 'line', 'diamond', 'ring', 'wave', 'triangle'];
+      const palette = [
+        { r: 99, g: 102, b: 241 },   // Indigo
+        { r: 129, g: 140, b: 248 }, // Neon Blue
+        { r: 168, g: 85, b: 247 },  // Purple
+        { r: 192, g: 132, b: 252 }, // Soft Lavender
+        { r: 56, g: 189, b: 248 }   // Cyan Glow
+      ];
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+        initDoodles();
+      }
+
+      class Doodle {
+        constructor(layer, randomPos = true) {
+          this.layer = layer; // 0 = bg (slow, faint, large), 1 = mid (medium), 2 = fg (faster, small, glowing)
+          this.reset(randomPos);
+        }
+
+        reset(randomPos = false) {
+          this.x = randomPos ? Math.random() * width : (Math.random() < 0.5 ? -40 : width + 40);
+          this.y = randomPos ? Math.random() * height : Math.random() * height;
+
+          let speedMult = 1;
+          if (this.layer === 0) { // Background Layer
+            this.size = Math.random() * 8 + 14;
+            this.baseAlpha = Math.random() * 0.08 + 0.06;
+            speedMult = 0.35;
+          } else if (this.layer === 1) { // Middle Layer
+            this.size = Math.random() * 6 + 7;
+            this.baseAlpha = Math.random() * 0.12 + 0.12;
+            speedMult = 0.7;
+          } else { // Foreground Layer
+            this.size = Math.random() * 4 + 3.5;
+            this.baseAlpha = Math.random() * 0.18 + 0.22;
+            speedMult = 1.15;
+          }
+
+          // Full 360-degree multi-directional drift
+          const moveAngle = Math.random() * Math.PI * 2;
+          const baseSpeed = (Math.random() * 0.6 + 0.4) * speedMult;
+          this.vx = Math.cos(moveAngle) * baseSpeed;
+          this.vy = Math.sin(moveAngle) * baseSpeed;
+
+          // Orbital / wave floating parameters
+          this.waveAmp = (Math.random() * 0.6 + 0.2) * speedMult;
+          this.waveFreq = Math.random() * 0.02 + 0.008;
+          this.wavePhase = Math.random() * Math.PI * 2;
+
+          // Continuous rotation
+          this.angle = Math.random() * Math.PI * 2;
+          this.rotSpeed = (Math.random() - 0.5) * 0.02 * speedMult;
+
+          // Shape & Color
+          this.shape = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
+          this.color = palette[Math.floor(Math.random() * palette.length)];
+
+          // Size pulse modulation
+          this.scaleMod = 1;
+          this.scaleSpeed = Math.random() * 0.02 + 0.01;
+          this.scalePhase = Math.random() * Math.PI * 2;
+
+          // Interaction physics
+          this.ox = 0;
+          this.oy = 0;
+          this.ovx = 0;
+          this.ovy = 0;
+          this.glowBonus = 0;
+        }
+
+        update() {
+          // 1. Continuous drift & gentle wave motion (NEVER stops)
+          this.wavePhase += this.waveFreq;
+          const waveOffset = Math.sin(this.wavePhase) * this.waveAmp;
+          this.x += this.vx - this.vy * waveOffset * 0.4;
+          this.y += this.vy + this.vx * waveOffset * 0.4;
+
+          // Continuous rotation
+          this.angle += this.rotSpeed;
+
+          // Continuous breathing size modulation
+          this.scaleMod = 1 + Math.sin(this.wavePhase * 1.5 + this.scalePhase) * 0.18;
+
+          // 2. Mouse attraction / repulsion
+          if (mouse.active) {
+            const curX = this.x + this.ox;
+            const curY = this.y + this.oy;
+            const dx = curX - mouse.x;
+            const dy = curY - mouse.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < mouse.radius && dist > 0) {
+              const force = (1 - dist / mouse.radius) * 2.4;
+              this.ovx += (dx / dist) * force * 0.4;
+              this.ovy += (dy / dist) * force * 0.4;
+              this.glowBonus = Math.min(0.4, this.glowBonus + 0.05);
+            }
+          }
+
+          // Damping & spring recovery
+          this.ox += this.ovx;
+          this.oy += this.ovy;
+          this.ovx *= 0.92;
+          this.ovy *= 0.92;
+          this.ox *= 0.94;
+          this.oy *= 0.94;
+          this.glowBonus *= 0.95;
+
+          // 3. Screen wrapping for endless flow
+          const margin = 50;
+          if (this.x < -margin) this.x = width + margin;
+          else if (this.x > width + margin) this.x = -margin;
+          if (this.y < -margin) this.y = height + margin;
+          else if (this.y > height + margin) this.y = -margin;
+        }
+
+        draw(ctx) {
+          const px = this.x + this.ox;
+          const py = this.y + this.oy;
+          const { r, g, b } = this.color;
+
+          // Keep center behind main card clean & readable
+          const cx = width / 2;
+          const cy = height / 2;
+          const distToCenter = Math.sqrt((px - cx) ** 2 + (py - cy) ** 2);
+          const centerDim = Math.min(1, Math.max(0.45, distToCenter / (width * 0.35)));
+
+          const alpha = Math.min(1, Math.max(0.04, (this.baseAlpha * centerDim) + this.glowBonus));
+          const s = this.size * this.scaleMod;
+
+          ctx.save();
+          ctx.translate(px, py);
+          ctx.rotate(this.angle);
+          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.7})`;
+          ctx.lineWidth = this.layer === 0 ? 1.0 : (this.layer === 1 ? 1.2 : 1.4);
+
+          // Glowing neon effect
+          if (this.layer === 2 || this.glowBonus > 0.05) {
+            ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${alpha * 0.9})`;
+            ctx.shadowBlur = (this.layer === 2 ? 8 : 4) + this.glowBonus * 14;
+          }
+
+          switch (this.shape) {
+            case 'circle': // ○
+              ctx.beginPath();
+              ctx.arc(0, 0, s, 0, Math.PI * 2);
+              ctx.stroke();
+              break;
+
+            case 'rounded-square': // □
+              const rRad = s * 0.3;
+              ctx.beginPath();
+              if (ctx.roundRect) {
+                ctx.roundRect(-s, -s, s * 2, s * 2, rRad);
+              } else {
+                ctx.strokeRect(-s, -s, s * 2, s * 2);
+              }
+              ctx.stroke();
+              break;
+
+            case 'spark': // ✦ 4-point star
+              ctx.beginPath();
+              ctx.moveTo(0, -s * 1.3);
+              ctx.quadraticCurveTo(0, 0, s * 1.3, 0);
+              ctx.quadraticCurveTo(0, 0, 0, s * 1.3);
+              ctx.quadraticCurveTo(0, 0, -s * 1.3, 0);
+              ctx.quadraticCurveTo(0, 0, 0, -s * 1.3);
+              ctx.closePath();
+              ctx.fill();
+              ctx.stroke();
+              break;
+
+            case 'cross': // +
+              ctx.beginPath();
+              ctx.moveTo(-s * 1.1, 0); ctx.lineTo(s * 1.1, 0);
+              ctx.moveTo(0, -s * 1.1); ctx.lineTo(0, s * 1.1);
+              ctx.stroke();
+              break;
+
+            case 'line': // —
+              ctx.beginPath();
+              ctx.moveTo(-s * 1.4, 0);
+              ctx.lineTo(s * 1.4, 0);
+              ctx.stroke();
+              break;
+
+            case 'diamond': // ◇
+              ctx.beginPath();
+              ctx.moveTo(0, -s * 1.2);
+              ctx.lineTo(s * 0.9, 0);
+              ctx.lineTo(0, s * 1.2);
+              ctx.lineTo(-s * 0.9, 0);
+              ctx.closePath();
+              ctx.stroke();
+              break;
+
+            case 'ring': // ◌
+              ctx.beginPath();
+              ctx.arc(0, 0, s * 1.1, 0, Math.PI * 2);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(0, 0, s * 0.35, 0, Math.PI * 2);
+              ctx.fill();
+              break;
+
+            case 'wave': // ∿
+              ctx.beginPath();
+              ctx.moveTo(-s * 1.3, 0);
+              ctx.bezierCurveTo(-s * 0.5, -s * 0.9, s * 0.5, s * 0.9, s * 1.3, 0);
+              ctx.stroke();
+              break;
+
+            case 'triangle': // △
+              ctx.beginPath();
+              ctx.moveTo(0, -s * 1.1);
+              ctx.lineTo(s * 0.95, s * 0.7);
+              ctx.lineTo(-s * 0.95, s * 0.7);
+              ctx.closePath();
+              ctx.stroke();
+              break;
+          }
+
+          ctx.restore();
+        }
+      }
+
+      class BurstParticle {
+        constructor(x, y, color) {
+          this.x = x;
+          this.y = y;
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 2.8 + 1.2;
+          this.vx = Math.cos(angle) * speed;
+          this.vy = Math.sin(angle) * speed;
+          this.color = color || palette[Math.floor(Math.random() * palette.length)];
+          this.size = Math.random() * 3 + 1.5;
+          this.alpha = 0.85;
+          this.decay = Math.random() * 0.02 + 0.015;
+          this.shape = shapeTypes[Math.floor(Math.random() * shapeTypes.length)];
+          this.angle = Math.random() * Math.PI * 2;
+          this.rotSpeed = (Math.random() - 0.5) * 0.05;
+        }
+
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.vx *= 0.94;
+          this.vy *= 0.94;
+          this.angle += this.rotSpeed;
+          this.alpha -= this.decay;
+          return this.alpha > 0;
+        }
+
+        draw(ctx) {
+          if (this.alpha <= 0) return;
+          const { r, g, b } = this.color;
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(this.angle);
+          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+          ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+          ctx.shadowBlur = 10;
+          ctx.lineWidth = 1.2;
+
+          const s = this.size;
+          if (this.shape === 'cross') {
+            ctx.beginPath();
+            ctx.moveTo(-s, 0); ctx.lineTo(s, 0);
+            ctx.moveTo(0, -s); ctx.lineTo(0, s);
+            ctx.stroke();
+          } else if (this.shape === 'spark') {
+            ctx.beginPath();
+            ctx.moveTo(0, -s); ctx.quadraticCurveTo(0,0,s,0);
+            ctx.quadraticCurveTo(0,0,0,s); ctx.quadraticCurveTo(0,0,-s,0);
+            ctx.quadraticCurveTo(0,0,0,-s); ctx.fill();
+          } else {
+            ctx.beginPath();
+            ctx.arc(0, 0, s * 0.8, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      }
+
+      class Ripple {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+          this.radius = 0;
+          this.maxRadius = Math.min(width, height) * 0.25 + 80;
+          this.alpha = 0.5;
+          this.color = palette[Math.floor(Math.random() * palette.length)];
+        }
+
+        update() {
+          this.radius += 4;
+          this.alpha = Math.max(0, 0.5 * (1 - this.radius / this.maxRadius));
+          return this.radius < this.maxRadius && this.alpha > 0;
+        }
+
+        draw(ctx) {
+          if (this.alpha <= 0) return;
+          const { r, g, b } = this.color;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${this.alpha * 0.85})`;
+          ctx.lineWidth = 1.5;
+          ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${this.alpha})`;
+          ctx.shadowBlur = 14;
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      function initDoodles() {
+        doodles.length = 0;
+        const total = width < 768 ? 24 : 44;
+        const bgCount = Math.floor(total * 0.3);
+        const midCount = Math.floor(total * 0.4);
+        const fgCount = total - bgCount - midCount;
+
+        for (let i = 0; i < bgCount; i++) doodles.push(new Doodle(0, true));
+        for (let i = 0; i < midCount; i++) doodles.push(new Doodle(1, true));
+        for (let i = 0; i < fgCount; i++) doodles.push(new Doodle(2, true));
+      }
+
+      // Subtle dynamic connection lines
+      function drawConnections() {
+        const maxDist = 95;
+        const len = doodles.length;
+        for (let i = 0; i < len; i++) {
+          const d1 = doodles[i];
+          const x1 = d1.x + d1.ox;
+          const y1 = d1.y + d1.oy;
+
+          for (let j = i + 1; j < len; j++) {
+            const d2 = doodles[j];
+            const x2 = d2.x + d2.ox;
+            const y2 = d2.y + d2.oy;
+            const dx = x1 - x2;
+            const dy = y1 - y2;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < maxDist) {
+              const lineAlpha = (1 - dist / maxDist) * 0.12 * Math.min(d1.baseAlpha, d2.baseAlpha) * 4;
+              ctx.beginPath();
+              ctx.moveTo(x1, y1);
+              ctx.lineTo(x2, y2);
+              ctx.strokeStyle = `rgba(129, 140, 248, ${Math.min(0.2, lineAlpha)})`;
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      function createClickEffect(x, y) {
+        ripples.push(new Ripple(x, y));
+
+        // Shockwave scatter outward on all floating doodles
+        const shockRadius = 220;
+        doodles.forEach(d => {
+          const dx = (d.x + d.ox) - x;
+          const dy = (d.y + d.oy) - y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < shockRadius && dist > 0) {
+            const force = (1 - dist / shockRadius) * 5.5;
+            d.ovx += (dx / dist) * force;
+            d.ovy += (dy / dist) * force;
+            d.glowBonus = Math.min(0.45, d.glowBonus + 0.3);
+          }
+        });
+
+        // Burst of micro-particles
+        const burstCount = Math.floor(Math.random() * 4) + 8;
+        for (let i = 0; i < burstCount; i++) {
+          burstParticles.push(new BurstParticle(x, y));
+        }
+      }
+
+      function loop() {
+        ctx.clearRect(0, 0, width, height);
+
+        if (prefersReduced) {
+          doodles.forEach(d => d.draw(ctx));
+          return;
+        }
+
+        // Draw connections
+        drawConnections();
+
+        // Update & draw ripples
+        for (let i = ripples.length - 1; i >= 0; i--) {
+          if (ripples[i].update()) {
+            ripples[i].draw(ctx);
+          } else {
+            ripples.splice(i, 1);
+          }
+        }
+
+        // Update & draw burst particles
+        for (let i = burstParticles.length - 1; i >= 0; i--) {
+          if (burstParticles[i].update()) {
+            burstParticles[i].draw(ctx);
+          } else {
+            burstParticles.splice(i, 1);
+          }
+        }
+
+        // Update & draw continuous floating doodles
+        doodles.forEach(d => {
+          d.update();
+          d.draw(ctx);
+        });
+
+        requestAnimationFrame(loop);
+      }
+
+      function isInteractiveElement(target) {
+        if (!target) return false;
+        return Boolean(
+          target.closest('button') ||
+          target.closest('input') ||
+          target.closest('label') ||
+          target.closest('a') ||
+          target.closest('.container') ||
+          target.closest('.pin-card')
+        );
+      }
+
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+        mouse.active = true;
+      }, { passive: true });
+
+      window.addEventListener('mouseleave', () => {
+        mouse.active = false;
+      });
+
+      window.addEventListener('pointerdown', (e) => {
+        if (!isInteractiveElement(e.target)) {
+          createClickEffect(e.clientX, e.clientY);
+        }
+      }, { passive: true });
+
+      window.addEventListener('resize', resize, { passive: true });
+
+      resize();
+      if (prefersReduced) {
+        doodles.forEach(d => d.draw(ctx));
+      } else {
+        loop();
+      }
+    })();
+  </script>
+</body>
+</html>

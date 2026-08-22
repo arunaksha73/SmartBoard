@@ -2,6 +2,7 @@
   "version": 2,
   "buildCommand": "node scripts/sync_public.js",
   "installCommand": "npm install",
+  "cleanUrls": true,
   "headers": [
     {
       "source": "/(.*)",
@@ -13,9 +14,11 @@
     }
   ],
   "rewrites": [
-    { "source": "/",           "destination": "/public/index.html" },
-    { "source": "/remote",     "destination": "/public/index.html" },
-    { "source": "/board",      "destination": "/public/board.html" },
-    { "source": "/board.html", "destination": "/public/board.html" }
+    { "source": "/remote", "destination": "/remote.html" },
+    { "source": "/remote.html", "destination": "/remote.html" },
+    { "source": "/board", "destination": "/board.html" },
+    { "source": "/board.html", "destination": "/board.html" },
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/index.html", "destination": "/index.html" }
   ]
 }

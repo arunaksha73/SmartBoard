@@ -601,6 +601,14 @@ app.get('/board.html', (req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, 'board.html'));
 });
 
+app.get('/remote', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+
+app.get('/remote.html', (req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+
 // ---------------------------------------------------------------------------
 // SOCKET.IO REALTIME CONNECTIONS
 // ---------------------------------------------------------------------------
