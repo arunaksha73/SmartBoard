@@ -1,256 +1,321 @@
 /**
- * storage.js — S3-Compatible Persistent Object Storage Abstraction
- * Supports Cloudflare R2, AWS S3, Supabase, Backblaze B2, MinIO, Wasabi, etc.
+ * storage.js — Google Drive Persistent Object Storage Abstraction
+ * Uses the official Google Drive API v3 with Service Account authentication.
  *
- * When STORAGE_BUCKET and credentials are provided in environment variables,
- * presentations are saved persistently to object storage so they survive
- * all Render container restarts, redeployments, and instance replacements.
+ * Presentations are stored privately in your designated Google Drive folder:
+ * (GOOGLE_DRIVE_FOLDER_ID = 1EDu-v1jwhKUC91vIj_CVeCD_HooSvepg)
  *
- * When storage environment variables are absent, gracefully falls back to local disk
- * (safe for local development).
+ * Survives all Render container restarts, redeployments, and instance replacements.
+ * When Google credentials are not set, transparently falls back to local disk (uploads/).
  */
 
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
-const {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-  HeadObjectCommand,
-  DeleteObjectCommand,
-  ListObjectsV2Command
-} = require('@aws-sdk/client-s3');
+const { google } = require('googleapis');
 
 // ─── Environment Variables Resolution ────────────────────────────────────────
-const STORAGE_ENDPOINT = (process.env.STORAGE_ENDPOINT || '').trim();
-const STORAGE_REGION = (process.env.STORAGE_REGION || process.env.AWS_REGION || 'auto').trim();
-const STORAGE_BUCKET = (process.env.STORAGE_BUCKET || '').trim();
-const STORAGE_ACCESS_KEY = (
-  process.env.STORAGE_ACCESS_KEY ||
-  process.env.STORAGE_ACCESS_KEY_ID ||
-  process.env.AWS_ACCESS_KEY_ID ||
+const GOOGLE_DRIVE_FOLDER_ID = (
+  process.env.GOOGLE_DRIVE_FOLDER_ID ||
+  '1EDu-v1jwhKUC91vIj_CVeCD_HooSvepg'
+).trim();
+
+const GOOGLE_SERVICE_ACCOUNT_EMAIL = (
+  process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ||
+  process.env.GOOGLE_CLIENT_EMAIL ||
   ''
 ).trim();
-const STORAGE_SECRET_KEY = (
-  process.env.STORAGE_SECRET_KEY ||
-  process.env.STORAGE_SECRET_ACCESS_KEY ||
-  process.env.AWS_SECRET_ACCESS_KEY ||
+
+let GOOGLE_PRIVATE_KEY = (
+  process.env.GOOGLE_PRIVATE_KEY ||
   ''
 ).trim();
-const STORAGE_FORCE_PATH_STYLE = process.env.STORAGE_FORCE_PATH_STYLE === 'true';
-const STORAGE_PUBLIC_URL = (process.env.STORAGE_PUBLIC_URL || '').trim().replace(/\/$/, '');
 
-let s3Client = null;
-let isStorageConfigured = false;
-
-if (STORAGE_BUCKET && STORAGE_ACCESS_KEY && STORAGE_SECRET_KEY) {
+// Support full JSON credential block if provided via GOOGLE_SERVICE_ACCOUNT_JSON
+if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
   try {
-    const s3Config = {
-      region: STORAGE_REGION,
-      credentials: {
-        accessKeyId: STORAGE_ACCESS_KEY,
-        secretAccessKey: STORAGE_SECRET_KEY
+    const parsed = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    if (parsed.client_email) {
+      if (!GOOGLE_SERVICE_ACCOUNT_EMAIL) {
+        GOOGLE_SERVICE_ACCOUNT_EMAIL = parsed.client_email;
       }
-    };
-
-    if (STORAGE_ENDPOINT) {
-      s3Config.endpoint = STORAGE_ENDPOINT;
     }
-    if (STORAGE_FORCE_PATH_STYLE) {
-      s3Config.forcePathStyle = true;
+    if (parsed.private_key && !GOOGLE_PRIVATE_KEY) {
+      GOOGLE_PRIVATE_KEY = parsed.private_key;
     }
-
-    s3Client = new S3Client(s3Config);
-    isStorageConfigured = true;
-    console.log(`[Storage] Persistent S3-compatible storage active. Bucket: "${STORAGE_BUCKET}" (${STORAGE_ENDPOINT || 'AWS standard'})`);
   } catch (err) {
-    console.error('[Storage] Failed to initialize S3 client:', err.message);
+    console.warn('[Storage] Could not parse GOOGLE_SERVICE_ACCOUNT_JSON:', err.message);
+  }
+}
+
+// Clean up private key formatting (handles escaped \n in environment variables)
+if (GOOGLE_PRIVATE_KEY) {
+  GOOGLE_PRIVATE_KEY = GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
+}
+
+let driveClient = null;
+let isStorageConfigured = false;
+// Fast in-memory cache: fileName -> Google Drive fileId
+const fileIdCache = new Map();
+
+if (GOOGLE_DRIVE_FOLDER_ID && GOOGLE_SERVICE_ACCOUNT_EMAIL && GOOGLE_PRIVATE_KEY) {
+  try {
+    const auth = new google.auth.JWT({
+      email: GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: GOOGLE_PRIVATE_KEY,
+      scopes: [
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive'
+      ]
+    });
+
+    driveClient = google.drive({ version: 'v3', auth });
+    isStorageConfigured = true;
+    console.log(`[Storage] Google Drive persistent storage active. Folder ID: "${GOOGLE_DRIVE_FOLDER_ID}"`);
+  } catch (err) {
+    console.error('[Storage] Failed to initialize Google Drive client:', err.message);
     isStorageConfigured = false;
   }
 } else {
-  console.log('[Storage] Storage credentials not configured. Using local disk fallback (ideal for local dev).');
+  console.log('[Storage] Google Drive credentials not configured. Using local disk fallback (ideal for local dev).');
 }
 
 /**
- * Check if remote persistent storage is active
+ * Check if Google Drive persistent storage is active
  */
 function isConfigured() {
-  return isStorageConfigured && s3Client !== null;
+  return isStorageConfigured && driveClient !== null;
 }
 
 /**
- * Upload a local file to persistent object storage
- * @param {string} localFilePath - Path to local file
- * @param {string} storageKey    - Target key (e.g. "3872.pdf")
- * @param {string} contentType   - MIME type (e.g. "application/pdf")
- * @returns {Promise<boolean>}
+ * Find a file in the Google Drive folder by exact filename
+ * @param {string} fileName - e.g. "3872.pdf"
+ * @returns {Promise<{id: string, name: string, size?: number, modifiedTime?: string}|null>}
  */
-async function uploadFile(localFilePath, storageKey, contentType = 'application/pdf') {
-  if (!isConfigured()) return true;
-
-  try {
-    const fileStream = fs.createReadStream(localFilePath);
-    const stats = await fsp.stat(localFilePath);
-
-    const command = new PutObjectCommand({
-      Bucket: STORAGE_BUCKET,
-      Key: storageKey,
-      Body: fileStream,
-      ContentLength: stats.size,
-      ContentType: contentType
-    });
-
-    await s3Client.send(command);
-    console.log(`[Storage] Uploaded to persistent storage: ${storageKey} (${(stats.size / (1024 * 1024)).toFixed(2)} MB)`);
-    return true;
-  } catch (err) {
-    console.error(`[Storage] Failed to upload ${storageKey} to object storage:`, err.message);
-    return false;
-  }
-}
-
-/**
- * Check if a file exists in persistent storage without downloading it
- * @param {string} storageKey - e.g. "3872.pdf"
- * @returns {Promise<{exists: boolean, size?: number, lastModified?: Date}>}
- */
-async function headFile(storageKey) {
-  if (!isConfigured()) return { exists: false };
-
-  try {
-    const command = new HeadObjectCommand({
-      Bucket: STORAGE_BUCKET,
-      Key: storageKey
-    });
-
-    const response = await s3Client.send(command);
-    return {
-      exists: true,
-      size: response.ContentLength || 0,
-      lastModified: response.LastModified || new Date()
-    };
-  } catch (err) {
-    if (err.name === 'NotFound' || err.$metadata?.httpStatusCode === 404) {
-      return { exists: false };
-    }
-    console.warn(`[Storage] HeadObject check failed for ${storageKey}:`, err.message);
-    return { exists: false };
-  }
-}
-
-/**
- * Download a file from persistent storage to a local file path
- * @param {string} storageKey          - e.g. "3872.pdf"
- * @param {string} localDestinationPath - Destination on local disk
- * @returns {Promise<boolean>}
- */
-async function downloadFile(storageKey, localDestinationPath) {
-  if (!isConfigured()) return false;
-
-  try {
-    const command = new GetObjectCommand({
-      Bucket: STORAGE_BUCKET,
-      Key: storageKey
-    });
-
-    const response = await s3Client.send(command);
-    if (!response.Body) return false;
-
-    // Ensure parent folder exists
-    await fsp.mkdir(path.dirname(localDestinationPath), { recursive: true });
-
-    // Stream download to destination file
-    await new Promise((resolve, reject) => {
-      const writeStream = fs.createWriteStream(localDestinationPath);
-      response.Body.pipe(writeStream);
-      writeStream.on('finish', resolve);
-      writeStream.on('error', reject);
-    });
-
-    console.log(`[Storage] Restored file from persistent storage to local cache: ${storageKey}`);
-    return true;
-  } catch (err) {
-    console.error(`[Storage] Failed to download ${storageKey} from object storage:`, err.message);
-    return false;
-  }
-}
-
-/**
- * Get a readable stream for a file from persistent storage
- * @param {string} storageKey - e.g. "3872.pdf"
- * @returns {Promise<ReadableStream|null>}
- */
-async function getFileStream(storageKey) {
+async function findFileByName(fileName) {
   if (!isConfigured()) return null;
 
+  // Check in-memory cache first
+  const cachedId = fileIdCache.get(fileName);
+  if (cachedId) {
+    return { id: cachedId, name: fileName };
+  }
+
   try {
-    const command = new GetObjectCommand({
-      Bucket: STORAGE_BUCKET,
-      Key: storageKey
+    const res = await driveClient.files.list({
+      q: `'${GOOGLE_DRIVE_FOLDER_ID}' in parents and name = '${fileName}' and trashed = false`,
+      fields: 'files(id, name, size, modifiedTime)',
+      spaces: 'drive',
+      pageSize: 1
     });
 
-    const response = await s3Client.send(command);
-    return response.Body || null;
+    const file = res.data.files && res.data.files[0];
+    if (file && file.id) {
+      fileIdCache.set(fileName, file.id);
+      return file;
+    }
+    return null;
   } catch (err) {
-    console.error(`[Storage] Failed to get stream for ${storageKey}:`, err.message);
+    console.warn(`[Storage] Google Drive lookup failed for "${fileName}":`, err.message);
     return null;
   }
 }
 
 /**
- * Delete a file from persistent object storage
- * @param {string} storageKey - e.g. "3872.pdf"
+ * Upload a local presentation file to the private Google Drive folder
+ * @param {string} localFilePath - Path to local file
+ * @param {string} fileName      - Target filename (e.g. "3872.pdf")
+ * @param {string} contentType   - MIME type (e.g. "application/pdf")
  * @returns {Promise<boolean>}
  */
-async function deleteFile(storageKey) {
+async function uploadFile(localFilePath, fileName, contentType = 'application/pdf') {
   if (!isConfigured()) return true;
 
   try {
-    const command = new DeleteObjectCommand({
-      Bucket: STORAGE_BUCKET,
-      Key: storageKey
-    });
+    const stats = await fsp.stat(localFilePath);
+    const media = {
+      mimeType: contentType,
+      body: fs.createReadStream(localFilePath)
+    };
 
-    await s3Client.send(command);
-    console.log(`[Storage] Deleted from persistent storage: ${storageKey}`);
-    return true;
+    // Check if file already exists in folder (update instead of duplicate)
+    const existing = await findFileByName(fileName);
+    let res;
+
+    if (existing && existing.id) {
+      res = await driveClient.files.update({
+        fileId: existing.id,
+        media,
+        fields: 'id, name, size'
+      });
+      console.log(`[Storage] Updated existing Google Drive file: ${fileName} (ID: ${existing.id})`);
+    } else {
+      res = await driveClient.files.create({
+        requestBody: {
+          name: fileName,
+          parents: [GOOGLE_DRIVE_FOLDER_ID]
+        },
+        media,
+        fields: 'id, name, size'
+      });
+      console.log(`[Storage] Uploaded to Google Drive folder: ${fileName} (ID: ${res.data.id}, ${(stats.size / (1024 * 1024)).toFixed(2)} MB)`);
+    }
+
+    if (res && res.data && res.data.id) {
+      fileIdCache.set(fileName, res.data.id);
+      return true;
+    }
+    return false;
   } catch (err) {
-    console.warn(`[Storage] Could not delete ${storageKey} from object storage:`, err.message);
+    console.error(`[Storage] Failed to upload "${fileName}" to Google Drive:`, err.message);
     return false;
   }
 }
 
 /**
- * List all presentation files stored in the bucket
+ * Check if a file exists in Google Drive without downloading it
+ * @param {string} fileName - e.g. "3872.pdf"
+ * @returns {Promise<{exists: boolean, size?: number, lastModified?: Date}>}
+ */
+async function headFile(fileName) {
+  if (!isConfigured()) return { exists: false };
+
+  try {
+    const file = await findFileByName(fileName);
+    if (file && file.id) {
+      return {
+        exists: true,
+        size: Number(file.size) || 0,
+        lastModified: file.modifiedTime ? new Date(file.modifiedTime) : new Date()
+      };
+    }
+    return { exists: false };
+  } catch (err) {
+    return { exists: false };
+  }
+}
+
+/**
+ * Download a file from Google Drive to a local file path
+ * @param {string} fileName            - e.g. "3872.pdf"
+ * @param {string} localDestinationPath - Destination on local disk
+ * @returns {Promise<boolean>}
+ */
+async function downloadFile(fileName, localDestinationPath) {
+  if (!isConfigured()) return false;
+
+  try {
+    const file = await findFileByName(fileName);
+    if (!file || !file.id) {
+      return false;
+    }
+
+    const res = await driveClient.files.get(
+      { fileId: file.id, alt: 'media' },
+      { responseType: 'stream' }
+    );
+
+    if (!res.data) return false;
+
+    // Ensure parent destination folder exists
+    await fsp.mkdir(path.dirname(localDestinationPath), { recursive: true });
+
+    await new Promise((resolve, reject) => {
+      const destStream = fs.createWriteStream(localDestinationPath);
+      res.data.pipe(destStream);
+      destStream.on('finish', resolve);
+      destStream.on('error', reject);
+    });
+
+    console.log(`[Storage] Restored file from Google Drive to local cache: ${fileName}`);
+    return true;
+  } catch (err) {
+    console.error(`[Storage] Failed to download "${fileName}" from Google Drive:`, err.message);
+    return false;
+  }
+}
+
+/**
+ * Get a readable stream for a file from Google Drive
+ * @param {string} fileName - e.g. "3872.pdf"
+ * @returns {Promise<ReadableStream|null>}
+ */
+async function getFileStream(fileName) {
+  if (!isConfigured()) return null;
+
+  try {
+    const file = await findFileByName(fileName);
+    if (!file || !file.id) return null;
+
+    const res = await driveClient.files.get(
+      { fileId: file.id, alt: 'media' },
+      { responseType: 'stream' }
+    );
+
+    return res.data || null;
+  } catch (err) {
+    console.error(`[Storage] Failed to get stream for "${fileName}" from Google Drive:`, err.message);
+    return null;
+  }
+}
+
+/**
+ * Delete a presentation file from Google Drive
+ * @param {string} fileName - e.g. "3872.pdf"
+ * @returns {Promise<boolean>}
+ */
+async function deleteFile(fileName) {
+  if (!isConfigured()) return true;
+
+  try {
+    const file = await findFileByName(fileName);
+    if (file && file.id) {
+      await driveClient.files.delete({ fileId: file.id });
+      fileIdCache.delete(fileName);
+      console.log(`[Storage] Deleted from Google Drive: ${fileName} (ID: ${file.id})`);
+      return true;
+    }
+    return true;
+  } catch (err) {
+    console.warn(`[Storage] Could not delete "${fileName}" from Google Drive:`, err.message);
+    return false;
+  }
+}
+
+/**
+ * List all presentation files stored in the Google Drive folder
  * @returns {Promise<Array<{pin: string, filename: string, size: number, lastModified: Date}>>}
  */
 async function listPresentations() {
   if (!isConfigured()) return [];
 
   try {
-    const command = new ListObjectsV2Command({
-      Bucket: STORAGE_BUCKET
+    const res = await driveClient.files.list({
+      q: `'${GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed = false`,
+      fields: 'files(id, name, size, modifiedTime)',
+      spaces: 'drive',
+      pageSize: 100
     });
 
-    const response = await s3Client.send(command);
-    const contents = response.Contents || [];
-
+    const files = res.data.files || [];
     const presentations = [];
-    for (const item of contents) {
-      const match = item.Key && item.Key.match(/^(\d{4})\.pdf$/);
+
+    for (const f of files) {
+      const match = f.name && f.name.match(/^(\d{4})\.pdf$/);
       if (match) {
+        fileIdCache.set(f.name, f.id);
         presentations.push({
           pin: match[1],
-          filename: item.Key,
-          size: item.Size || 0,
-          lastModified: item.LastModified || new Date()
+          filename: f.name,
+          size: Number(f.size) || 0,
+          lastModified: f.modifiedTime ? new Date(f.modifiedTime) : new Date()
         });
       }
     }
+
     return presentations;
   } catch (err) {
-    console.error('[Storage] Failed to list presentations from bucket:', err.message);
+    console.error('[Storage] Failed to list presentations from Google Drive:', err.message);
     return [];
   }
 }
@@ -263,7 +328,5 @@ module.exports = {
   getFileStream,
   deleteFile,
   listPresentations,
-  STORAGE_BUCKET,
-  STORAGE_ENDPOINT,
-  STORAGE_PUBLIC_URL
+  GOOGLE_DRIVE_FOLDER_ID
 };

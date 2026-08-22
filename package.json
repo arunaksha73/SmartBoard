@@ -12,9 +12,9 @@
     "build": "node scripts/sync_public.js"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1116.0",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "googleapis": "^176.0.0",
     "multer": "^2.0.1",
     "socket.io": "^4.7.5"
   }

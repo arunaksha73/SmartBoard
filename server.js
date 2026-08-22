@@ -3,17 +3,17 @@
  * Express + Socket.io Backend for Render.com & Local Deployments
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * PERSISTENT STORAGE ARCHITECTURE
+ * PERSISTENT GOOGLE DRIVE STORAGE ARCHITECTURE
  * ─────────────────────────────────────────────────────────────────────────────
- * - S3-COMPATIBLE OBJECT STORAGE: Presentations are saved to persistent object
- *   storage (Cloudflare R2, AWS S3, Supabase, B2, MinIO) when configured.
+ * - GOOGLE DRIVE API PERSISTENCE: Presentations are stored privately in your
+ *   dedicated Google Drive folder (GOOGLE_DRIVE_FOLDER_ID) via Service Account.
  * - RECOVERY AFTER RESTART: Even after Render restarts, redeploys, or replaces
  *   the instance, presentations and PIN sessions are automatically restored
- *   from persistent object storage.
- * - LOCAL DEV FALLBACK: When storage credentials are not provided, gracefully
+ *   from Google Drive storage.
+ * - LOCAL DEV FALLBACK: When Google Drive credentials are not provided, gracefully
  *   falls back to local disk storage (zero configuration needed for local dev).
  * - HYBRID STREAMED CACHE: Files are served through local disk cache with HTTP
- *   ETag and Range headers, downloading on-demand from object storage if needed.
+ *   ETag and Range headers, downloading on-demand from Google Drive if needed.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -504,10 +504,10 @@ const handleUpload = async (req, res) => {
       silentUnlink(uploadedPath);
     }
 
-    // Persist to S3-compatible object storage asynchronously
+    // Persist to Google Drive storage asynchronously
     if (storage.isConfigured()) {
       storage.uploadFile(finalPath, finalFilename, 'application/pdf').catch(err => {
-        console.error(`[Storage] Background upload failed for PIN ${pin}:`, err);
+        console.error(`[Storage] Background upload to Google Drive failed for PIN ${pin}:`, err);
       });
     }
 
@@ -582,8 +582,8 @@ const handleHealth = (req, res) => {
       activeRooms: rooms.size,
       storage: {
         persistent: storage.isConfigured(),
-        provider: storage.isConfigured() ? 's3-compatible' : 'local-disk',
-        bucket: storage.STORAGE_BUCKET || null
+        provider: storage.isConfigured() ? 'google-drive' : 'local-disk',
+        folderId: storage.GOOGLE_DRIVE_FOLDER_ID || null
       },
       libreOfficeAvailable,
       sofficePath: SOFFICE_PATH || null,
@@ -614,7 +614,7 @@ app.get('/api/config', (req, res) => {
 });
 
 // ─── Persistent PDF Delivery & On-Demand Restore ────────────────────────────
-// If a file is not in local disk cache (e.g. after Render restart), restore from S3!
+// If a file is not in local disk cache (e.g. after Render restart), restore from Google Drive!
 app.get('/uploads/:filename', async (req, res, next) => {
   const filename = path.basename(req.params.filename);
   const localPath = path.join(UPLOAD_DIR, filename);
@@ -624,7 +624,7 @@ app.get('/uploads/:filename', async (req, res, next) => {
     return next();
   }
 
-  // 2. If missing locally, restore from persistent S3 storage
+  // 2. If missing locally, restore from persistent Google Drive storage
   if (storage.isConfigured()) {
     const downloaded = await storage.downloadFile(filename, localPath);
     if (downloaded) {
