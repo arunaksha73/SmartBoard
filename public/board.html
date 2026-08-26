@@ -586,6 +586,28 @@
     <!-- Presentation Canvas Workspace -->
     <div class="canvas-wrapper" id="canvasWrapper">
       <canvas id="pdfCanvas"></canvas>
+      <!-- Visible PDF error overlay shown inside canvas when PDF fails to load -->
+      <div id="boardError" style="
+        display: none;
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
+        color: #f87171;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 15px;
+        text-align: center;
+        padding: 40px;
+        background: rgba(7, 10, 18, 0.92);
+        z-index: 10;
+      ">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div id="boardErrorMsg" style="max-width: 480px; line-height: 1.6;"></div>
+        <button onclick="window.location.reload()" style="margin-top: 8px; padding: 10px 24px; background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.4); border-radius: 12px; color: #f87171; font-size: 13px; cursor: pointer;">Reload Board</button>
+      </div>
     </div>
 
     <!-- Floating Navigation Bar -->
@@ -695,31 +717,58 @@
       connectWithPin(pin);
     });
 
+    const boardErrorOverlay = document.getElementById('boardError');
+    const boardErrorMsg = document.getElementById('boardErrorMsg');
+
     function showError(msg) {
+      // Always write to pin-overlay error (visible before pairing)
       errorMsg.textContent = msg;
+    }
+
+    function showBoardError(msg, detail) {
+      // Show visible error inside the canvas area (works after pinOverlay is hidden)
+      console.error('[BOARD PDF ERROR]', msg, detail || '');
+      if (boardErrorOverlay && boardErrorMsg) {
+        boardErrorMsg.innerHTML = `<strong>${msg}</strong>${detail ? '<br><code style="font-size:12px;color:#fca5a5;word-break:break-all;">' + detail + '</code>' : ''}`;
+        boardErrorOverlay.style.display = 'flex';
+      }
     }
 
     async function connectWithPin(pin) {
       showError('Connecting to session...');
+      console.log(`[BOARD] Connecting to PIN: ${pin}`);
+      console.log(`[BOARD] SERVER_URL = ${SERVER_URL}`);
       try {
-        const response = await fetch(`${SERVER_URL}/api/presentation/${pin}`);
+        const apiUrl = `${SERVER_URL}/api/presentation/${pin}`;
+        console.log(`[BOARD] Fetching session: ${apiUrl}`);
+        const response = await fetch(apiUrl);
+        console.log(`[BOARD] Session response status: ${response.status}`);
+
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
           throw new Error(data.error || 'PIN not found or presentation expired.');
         }
 
         const data = await response.json();
+        console.log('[BOARD] Session data received:', JSON.stringify(data));
+
         if (data.ok && data.pdfUrl) {
+          const pdfFullUrl = `${SERVER_URL}${data.pdfUrl}`;
+          console.log(`[BOARD] PDF URL resolved: ${pdfFullUrl}`);
+          console.log(`[BOARD] Server totalPages: ${data.totalPages}, currentPage: ${data.currentPage}`);
+
           activePin = pin;
           displayPin.textContent = pin;
           pinOverlay.style.display = 'none';
           initBoardSocket(pin);
-          loadPdf(`${SERVER_URL}${data.pdfUrl}`, data.currentPage || 1);
+          loadPdf(pdfFullUrl, data.currentPage || 1);
         } else {
           throw new Error(data.error || 'Invalid session response.');
         }
       } catch (err) {
+        console.error('[BOARD] connectWithPin error:', err);
         showError(err.message);
+        showBoardError('Failed to connect to session.', err.message);
       }
     }
 
@@ -813,14 +862,58 @@
     }
 
     async function loadPdf(url, targetPage = 1) {
+      console.log(`[BOARD] loadPdf() called with URL: ${url}`);
+      console.log(`[BOARD] Target page: ${targetPage}`);
+
+      // Hide any previous error
+      if (boardErrorOverlay) boardErrorOverlay.style.display = 'none';
+
       try {
-        console.log(`[PDF] Loading PDF from: ${url}`);
-        const loadingTask = pdfjsLib.getDocument(url);
+        console.log(`[BOARD] Fetching PDF: ${url}`);
+
+        // Probe the URL first to get a clear error (CORS, 404, etc.)
+        let probeOk = false;
+        try {
+          const probe = await fetch(url, { method: 'HEAD', mode: 'cors', credentials: 'omit' });
+          console.log(`[BOARD] PDF probe response: HTTP ${probe.status}, Content-Type: ${probe.headers.get('content-type')}`);
+          if (!probe.ok) {
+            const detail = `HTTP ${probe.status} from ${url}`;
+            showBoardError('PDF file not found on server.', detail);
+            return;
+          }
+          const ct = probe.headers.get('content-type') || '';
+          if (!ct.includes('pdf') && !ct.includes('octet-stream') && !ct.includes('binary')) {
+            console.warn(`[BOARD] WARNING: PDF URL returned Content-Type: ${ct} — expected application/pdf`);
+          }
+          probeOk = true;
+        } catch (probeErr) {
+          // Probe failed (CORS or network) — try loading directly with PDF.js anyway
+          console.warn(`[BOARD] PDF probe failed (likely CORS preflight on CDN — proceeding with PDF.js): ${probeErr.message}`);
+          probeOk = true; // Let PDF.js try; it handles CORS-allowed GET requests
+        }
+
+        if (!probeOk) return;
+
+        const loadingTask = pdfjsLib.getDocument({
+          url: url,
+          withCredentials: false
+        });
+
+        loadingTask.onProgress = (progress) => {
+          if (progress.total > 0) {
+            const pct = Math.round((progress.loaded / progress.total) * 100);
+            console.log(`[BOARD] PDF loading progress: ${pct}%`);
+          }
+        };
+
         pdfDoc = await loadingTask.promise;
         totalPagesCount = pdfDoc.numPages;
+
+        console.log(`[BOARD] PDF loaded successfully!`);
+        console.log(`[BOARD] pdfDoc.numPages: ${totalPagesCount}`);
         console.log(`[PDF] Loaded: ${totalPagesCount} pages`);
-        console.log(`[PDF] Actual PDF page count (pdf.numPages): ${totalPagesCount}`);
-        console.log(`[PDF] Board page count: ${totalPagesCount}`);
+        console.log(`[BOARD] totalPages: ${totalPagesCount}`);
+
         pageCount.textContent = totalPagesCount;
         if (navTotalSlides) navTotalSlides.textContent = totalPagesCount;
 
@@ -828,23 +921,33 @@
         currentPageNum = startPage;
 
         if (socket && activePin) {
-          console.log(`[PDF] Emitting pdf-loaded: pin=${activePin}, totalPages=${totalPagesCount}, currentPage=${startPage}`);
+          console.log(`[BOARD] Emitting pdf-loaded: pin=${activePin}, totalPages=${totalPagesCount}, currentPage=${startPage}`);
           socket.emit('pdf-loaded', { pin: activePin, totalPages: totalPagesCount, currentPage: startPage });
         }
 
         renderPage(startPage);
       } catch (err) {
-        console.error('PDF Loading Error:', err);
-        showError('Could not render presentation PDF.');
+        console.error('[BOARD PDF ERROR]', err.name, err.message);
+        console.error('[BOARD PDF ERROR] Stack:', err.stack);
+        let detail = err.message;
+        if (err.name === 'UnexpectedResponseException' || (err.message && err.message.includes('Unexpected server response'))) {
+          detail = `The server returned non-PDF content for: ${url}\n${err.message}`;
+        }
+        showBoardError('Could not load the PDF presentation.', detail);
       }
     }
 
     async function renderPage(num) {
-      if (!pdfDoc) return;
+      if (!pdfDoc) {
+        console.warn('[BOARD] renderPage called but pdfDoc is null');
+        return;
+      }
       isRendering = true;
       currentPageNum = num;
       slideNum.textContent = num;
       if (navCurrentSlide) navCurrentSlide.textContent = num;
+
+      console.log(`[BOARD] Rendering page: ${num} / ${totalPagesCount}`);
 
       try {
         const page = await pdfDoc.getPage(num);
@@ -852,6 +955,13 @@
 
         const containerWidth = canvasWrapper.clientWidth || window.innerWidth;
         const containerHeight = canvasWrapper.clientHeight || window.innerHeight;
+
+        console.log(`[BOARD] Canvas container: ${containerWidth}x${containerHeight}px`);
+        console.log(`[BOARD] Page natural size: ${Math.round(viewportUnscaled.width)}x${Math.round(viewportUnscaled.height)}px`);
+
+        if (containerWidth === 0 || containerHeight === 0) {
+          console.warn('[BOARD] WARNING: canvasWrapper has zero dimensions! Falling back to window size.');
+        }
 
         const scaleX = containerWidth / viewportUnscaled.width;
         const scaleY = containerHeight / viewportUnscaled.height;
@@ -866,6 +976,8 @@
         canvas.style.width = Math.floor(viewport.width) + "px";
         canvas.style.height = Math.floor(viewport.height) + "px";
 
+        console.log(`[BOARD] Canvas size set to: ${canvas.width}x${canvas.height}px (CSS: ${canvas.style.width}x${canvas.style.height})`);
+
         const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
 
         const renderContext = {
@@ -876,14 +988,19 @@
 
         await page.render(renderContext).promise;
         isRendering = false;
+        console.log(`[BOARD] Render completed: page ${num}`);
+
+        // Hide board error overlay if render succeeded
+        if (boardErrorOverlay) boardErrorOverlay.style.display = 'none';
 
         if (pageNumPending !== null) {
           renderPage(pageNumPending);
           pageNumPending = null;
         }
       } catch (err) {
-        console.error('Render error:', err);
+        console.error('[BOARD RENDER ERROR]', err.name, err.message);
         isRendering = false;
+        showBoardError(`Failed to render slide ${num}.`, err.message);
       }
     }
 

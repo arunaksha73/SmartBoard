@@ -710,15 +710,31 @@ app.get('/uploads/:filename', async (req, res, next) => {
   return res.status(404).send('Presentation file not found or expired.');
 });
 
-// Serve cached PDFs with HTTP ETag & Cache-Control headers
+// Serve cached PDFs with HTTP ETag, Cache-Control, and CORS headers
+// IMPORTANT: We set CORS headers explicitly here because express.static's
+// setHeaders callback fires during response header preparation. Even though
+// cors() middleware earlier in the chain sets Access-Control-Allow-Origin,
+// we set them again here as belt-and-suspenders so cross-origin PDF.js
+// requests from the Vercel-hosted board always succeed.
 app.use('/uploads', express.static(UPLOAD_DIR, {
   maxAge: '1d',
   etag: true,
   lastModified: true,
-  setHeaders: (res) => {
+  setHeaders: (res, filePath) => {
     res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    // Explicit CORS for cross-origin PDF.js fetch from Vercel board
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    // Ensure correct MIME type for PDFs
+    if (filePath && filePath.toLowerCase().endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+    }
   }
 }));
+
 
 app.use(express.static(PUBLIC_DIR, {
   maxAge: '1h',
