@@ -871,25 +871,51 @@
       try {
         console.log(`[BOARD] Fetching PDF: ${url}`);
 
-        // Probe the URL first to get a clear error (CORS, 404, etc.)
+        // Probe the URL with a real GET request (triggers the /uploads/:filename route)
+        // to detect 404, wrong Content-Type, or server errors before giving it to PDF.js.
         let probeOk = false;
         try {
-          const probe = await fetch(url, { method: 'HEAD', mode: 'cors', credentials: 'omit' });
-          console.log(`[BOARD] PDF probe response: HTTP ${probe.status}, Content-Type: ${probe.headers.get('content-type')}`);
+          const probe = await fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit',
+            headers: { 'Range': 'bytes=0-1023' } }); // only fetch first 1KB for probing
+          const ct = probe.headers.get('content-type') || '';
+          console.log(`[BOARD] PDF probe response: HTTP ${probe.status}, Content-Type: ${ct}`);
+
           if (!probe.ok) {
-            const detail = `HTTP ${probe.status} from ${url}`;
-            showBoardError('PDF file not found on server.', detail);
+            // Try to read JSON error body from the server (the server now returns JSON on 404)
+            let serverMsg = `HTTP ${probe.status} — presentation file not found on server.`;
+            let isFileNotFound = probe.status === 404;
+            try {
+              const errBody = await probe.clone().json();
+              if (errBody && errBody.reason === 'FILE_NOT_FOUND') {
+                serverMsg = errBody.error || serverMsg;
+                isFileNotFound = true;
+              }
+            } catch (_) {}
+
+            if (isFileNotFound) {
+              showBoardError(
+                'Presentation no longer available.',
+                serverMsg + '<br><br>Please ask the presenter to re-upload the file and share the new PIN.'
+              );
+            } else {
+              showBoardError('PDF file could not be loaded.', `HTTP ${probe.status} from: ${url}`);
+            }
             return;
           }
-          const ct = probe.headers.get('content-type') || '';
+
           if (!ct.includes('pdf') && !ct.includes('octet-stream') && !ct.includes('binary')) {
             console.warn(`[BOARD] WARNING: PDF URL returned Content-Type: ${ct} — expected application/pdf`);
+            // If the response is JSON (likely a 404 error body passed through 2xx somehow), bail
+            if (ct.includes('json') || ct.includes('html')) {
+              showBoardError('Server returned unexpected content.', `Expected PDF, got: ${ct} from ${url}`);
+              return;
+            }
           }
           probeOk = true;
         } catch (probeErr) {
-          // Probe failed (CORS or network) — try loading directly with PDF.js anyway
-          console.warn(`[BOARD] PDF probe failed (likely CORS preflight on CDN — proceeding with PDF.js): ${probeErr.message}`);
-          probeOk = true; // Let PDF.js try; it handles CORS-allowed GET requests
+          // Probe failed (CORS preflight or network) — let PDF.js try directly
+          console.warn(`[BOARD] PDF probe failed — proceeding with PDF.js directly: ${probeErr.message}`);
+          probeOk = true;
         }
 
         if (!probeOk) return;

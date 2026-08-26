@@ -690,6 +690,16 @@ app.get('/api/config', (req, res) => {
 
 // ─── Persistent PDF Delivery & On-Demand Restore ────────────────────────────
 // If a file is not in local disk cache (e.g. after Render restart), restore from Google Drive!
+
+// Handle OPTIONS preflight for cross-origin HEAD/GET from Board PDF.js fetch
+app.options('/uploads/:filename', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.status(204).end();
+});
+
 app.get('/uploads/:filename', async (req, res, next) => {
   const filename = path.basename(req.params.filename);
   const localPath = path.join(UPLOAD_DIR, filename);
@@ -701,14 +711,29 @@ app.get('/uploads/:filename', async (req, res, next) => {
 
   // 2. If missing locally, restore from persistent Google Drive storage
   if (storage.isConfigured()) {
-    const downloaded = await storage.downloadFile(filename, localPath);
-    if (downloaded) {
-      return next();
+    try {
+      const downloaded = await storage.downloadFile(filename, localPath);
+      if (downloaded) {
+        console.log(`[PDF] Restored '${filename}' from Google Drive for delivery`);
+        return next();
+      }
+    } catch (dlErr) {
+      console.warn(`[PDF] Google Drive restore failed for '${filename}':`, dlErr.message);
     }
   }
 
-  return res.status(404).send('Presentation file not found or expired.');
+  // File not found — return JSON with CORS headers so Board can show a specific error
+  console.warn(`[PDF] File not found: '${filename}' — not on disk and no Google Drive config. Render may have restarted and wiped uploads/.`);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Content-Type', 'application/json');
+  return res.status(404).json({
+    ok: false,
+    error: 'Presentation file not found. The server may have restarted. Please re-upload your presentation.',
+    reason: 'FILE_NOT_FOUND',
+    filename
+  });
 });
+
 
 // Serve cached PDFs with HTTP ETag, Cache-Control, and CORS headers
 // IMPORTANT: We set CORS headers explicitly here because express.static's
