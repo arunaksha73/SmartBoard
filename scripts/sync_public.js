@@ -67,12 +67,17 @@ function injectBackendUrl(htmlPath) {
 }
 
 // HTML pages: public/ is the source of truth — inject then sync to root
-const htmlFiles = ['index.html', 'board.html'];
+//
+// NOTE: index.html is the device-detection entry point (NOT the Remote UI).
+//       remote.html is its own standalone Remote UI file.
+//       board.html  is the standalone Display/Board UI file.
+//       Each is injected and synced independently.
+const htmlFiles = ['index.html', 'board.html', 'remote.html'];
 htmlFiles.forEach(html => {
   const src = path.join(publicDir, html);
   const dst = path.join(rootDir, html);
   if (fs.existsSync(src)) {
-    // Inject into public/ copy
+    // Inject BACKEND_URL into the public/ copy
     injectBackendUrl(src);
     // Sync public/ → root (so server.js local dev also serves the right file)
     fs.copyFileSync(src, dst);
@@ -81,16 +86,6 @@ htmlFiles.forEach(html => {
     console.warn(`WARNING: public/${html} not found — skipping`);
   }
 });
-
-// Create and sync remote.html as an alias of index.html in both public/ and root
-const indexPublic = path.join(publicDir, 'index.html');
-const remotePublic = path.join(publicDir, 'remote.html');
-const remoteRoot = path.join(rootDir, 'remote.html');
-if (fs.existsSync(indexPublic)) {
-  fs.copyFileSync(indexPublic, remotePublic);
-  fs.copyFileSync(indexPublic, remoteRoot);
-  console.log('Synced index.html → remote.html in public/ and root');
-}
 
 console.log('Build: public assets synced successfully!');
 if (backendUrl) {
