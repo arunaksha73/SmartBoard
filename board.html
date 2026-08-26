@@ -185,16 +185,141 @@
       min-height: 18px;
     }
 
-    .pin-footer {
-      margin-top: 24px;
+    /* ── Creator Credit Section ── */
+    .pin-footer.creator-credit {
+      margin-top: 28px;
       padding-top: 20px;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 12.5px;
-      color: #64748b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .creator-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .creator-label {
+      font-size: 11.5px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      opacity: 0.85;
+    }
+
+    .creator-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .creator-social-links {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .creator-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-dim);
+      text-decoration: none;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .creator-btn svg {
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+
+    .creator-btn:hover {
+      transform: translateY(-2px);
+      color: #ffffff;
+      background: rgba(99, 102, 241, 0.14);
+      border-color: rgba(99, 102, 241, 0.45);
+      box-shadow: 0 4px 16px rgba(79, 70, 229, 0.28);
+    }
+
+    .creator-btn:hover svg {
+      transform: scale(1.12);
+    }
+
+    .creator-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Top Bar Creator Badge (Active Presentation) */
+    .top-bar-divider {
+      width: 1px;
+      height: 18px;
+      background: rgba(255, 255, 255, 0.12);
+      margin: 0 4px;
+    }
+
+    .top-bar-creator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .top-bar-creator strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .top-bar-socials {
+      display: flex;
+      align-items: center;
       gap: 6px;
+    }
+
+    .top-bar-social-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .top-bar-social-btn:hover {
+      color: #ffffff;
+      background: rgba(99, 102, 241, 0.16);
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+      .top-bar-creator, .top-bar-divider {
+        display: none;
+      }
     }
 
     /* ── Screen 2: Active Presentation Display ── */
@@ -384,8 +509,35 @@
       <button class="btn-connect" id="btnConnect">CONNECT TO DISPLAY</button>
       <div class="error-msg" id="errorMsg"></div>
 
-      <footer class="pin-footer">
-        <span>SmartBoard Remote Session Engine</span>
+      <footer class="pin-footer creator-credit">
+        <div class="creator-header">
+          <span class="creator-label">Created by</span>
+          <span class="creator-name">Arunaksha Das</span>
+        </div>
+        <div class="creator-social-links">
+          <a href="https://github.com/arunaksha73" target="_blank" rel="noopener noreferrer" class="creator-btn" aria-label="GitHub profile of Arunaksha Das" title="GitHub">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg>
+            <span>GitHub</span>
+          </a>
+          <a href="https://www.instagram.com/mr.ad_8974/" target="_blank" rel="noopener noreferrer" class="creator-btn" aria-label="Instagram profile of Arunaksha Das" title="Instagram">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+            <span>Instagram</span>
+          </a>
+          <a href="https://linkedin.com/in/arunaksha-das" target="_blank" rel="noopener noreferrer" class="creator-btn" aria-label="LinkedIn profile of Arunaksha Das" title="LinkedIn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+              <rect x="2" y="9" width="4" height="12"></rect>
+              <circle cx="4" cy="4" r="2"></circle>
+            </svg>
+            <span>LinkedIn</span>
+          </a>
+        </div>
       </footer>
     </div>
   </div>
@@ -396,6 +548,31 @@
     <div class="top-bar" id="topBar">
       <div class="top-bar-left">
         <span>PIN: <strong id="displayPin" style="color: var(--amber);">----</strong></span>
+        <span class="top-bar-divider"></span>
+        <div class="top-bar-creator">
+          <span>Created by <strong>Arunaksha Das</strong></span>
+          <div class="top-bar-socials">
+            <a href="https://github.com/arunaksha73" target="_blank" rel="noopener noreferrer" class="top-bar-social-btn" aria-label="GitHub profile of Arunaksha Das" title="GitHub">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+              </svg>
+            </a>
+            <a href="https://www.instagram.com/mr.ad_8974/" target="_blank" rel="noopener noreferrer" class="top-bar-social-btn" aria-label="Instagram profile of Arunaksha Das" title="Instagram">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+            </a>
+            <a href="https://linkedin.com/in/arunaksha-das" target="_blank" rel="noopener noreferrer" class="top-bar-social-btn" aria-label="LinkedIn profile of Arunaksha Das" title="LinkedIn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                <rect x="2" y="9" width="4" height="12"></rect>
+                <circle cx="4" cy="4" r="2"></circle>
+              </svg>
+            </a>
+          </div>
+        </div>
       </div>
       <div class="top-bar-right">
         <span>Slide <strong id="slideNum" style="color: #818cf8;">1</strong> of <span id="pageCount">1</span></span>
