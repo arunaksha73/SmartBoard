@@ -693,11 +693,11 @@ app.get('/board.html', (req, res) => {
 });
 
 app.get('/remote', (req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'remote.html'));
 });
 
 app.get('/remote.html', (req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+  res.sendFile(path.join(PUBLIC_DIR, 'remote.html'));
 });
 
 // ─── Socket.IO Real-Time Slide Synchronization ──────────────────────────────
