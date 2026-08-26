@@ -1115,6 +1115,7 @@
         if (data && data.ok) {
           if (data.currentPage !== undefined) currentSlide = data.currentPage;
           if (data.totalPages !== undefined) totalSlides = data.totalPages;
+          console.log(`[PDF] Remote page count from room-status: ${totalSlides}`);
           updateSlideInfo();
           if (currentPin) saveSession(currentPin, currentSlide, totalSlides);
         } else if (data && data.error && currentPin) {
@@ -1135,6 +1136,7 @@
       socket.on('total-pages', (data) => {
         if (data && data.totalPages) {
           totalSlides = data.totalPages;
+          console.log(`[PDF] Remote page count updated via total-pages: ${totalSlides}`);
           updateSlideInfo();
           if (currentPin) saveSession(currentPin, currentSlide, totalSlides);
         }

@@ -142,7 +142,7 @@ function detectLibreOffice() {
         return;
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   try {
     const cmd = process.platform === 'win32' ? 'where' : 'which';
@@ -156,7 +156,7 @@ function detectLibreOffice() {
         return;
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   libreOfficeAvailable = false;
   console.warn('[LibreOffice] Notice: LibreOffice not detected. PDF uploads will work; PPT/PPTX conversion unavailable.');
@@ -173,6 +173,55 @@ async function silentUnlink(filePath) {
     if (err.code !== 'ENOENT') {
       // Ignore missing files
     }
+  }
+}
+
+// ─── Pure-Node.js PDF Page Counter (zero external dependencies) ──────────────
+// Reads the PDF binary and extracts the real page count from /Pages /Count.
+// Falls back to counting /Type /Page objects. Returns 1 only on genuine error.
+async function getPdfPageCount(filePath) {
+  try {
+    const buf = await fsp.readFile(filePath);
+    const str = buf.toString('latin1'); // latin1 preserves all byte values
+    console.log(`[PDF] Reading page count from: ${path.basename(filePath)} (${buf.length} bytes)`);
+
+    // Strategy 1: /Type /Pages ... /Count N  (most reliable — root Pages node)
+    const re1 = /\/Type\s*\/Pages[\s\S]{0,200}?\/Count\s+(\d+)/g;
+    let match, max = 0;
+    while ((match = re1.exec(str)) !== null) {
+      const n = parseInt(match[1], 10);
+      if (n > max) max = n;
+    }
+    if (max > 0) { console.log(`[PDF] Actual PDF page count (strategy 1): ${max}`); return max; }
+
+    // Strategy 2: /Count N /Type /Pages  (reversed field order)
+    const re2 = /\/Count\s+(\d+)\s*\/Type\s*\/Pages/g;
+    while ((match = re2.exec(str)) !== null) {
+      const n = parseInt(match[1], 10);
+      if (n > max) max = n;
+    }
+    if (max > 0) { console.log(`[PDF] Actual PDF page count (strategy 2): ${max}`); return max; }
+
+    // Strategy 3: Count /Type /Page  dictionaries (individual page objects)
+    const pageMatches = str.match(/\/Type\s*\/Page[^s]/g);
+    if (pageMatches && pageMatches.length > 0) {
+      console.log(`[PDF] Actual PDF page count (strategy 3 - page count): ${pageMatches.length}`);
+      return pageMatches.length;
+    }
+
+    // Strategy 4: Any standalone /Count N
+    const re4 = /\/Count\s+(\d+)/g;
+    while ((match = re4.exec(str)) !== null) {
+      const n = parseInt(match[1], 10);
+      if (n > max) max = n;
+    }
+    if (max > 0) { console.log(`[PDF] Actual PDF page count (strategy 4): ${max}`); return max; }
+
+    console.warn(`[PDF] Could not determine page count for ${path.basename(filePath)} — defaulting to 1`);
+    return 1;
+  } catch (err) {
+    console.error(`[PDF] Error reading page count for ${path.basename(filePath)}:`, err.message);
+    return 1;
   }
 }
 
@@ -222,19 +271,21 @@ async function getOrRestoreRoom(pin) {
   if (fs.existsSync(localPath)) {
     try {
       const stats = await fsp.stat(localPath);
+      const realPageCount = await getPdfPageCount(localPath);
+      console.log(`[PDF] Restored from local cache — actual page count: ${realPageCount}`);
       room = {
         pin: pinStr,
         filename: finalFilename,
         pdfUrl: `/uploads/${finalFilename}`,
         currentPage: 1,
-        totalPages: 1,
+        totalPages: realPageCount,
         createdAt: stats.mtimeMs || Date.now(),
         hasPhoneConnected: false
       };
       rooms.set(pinStr, room);
-      console.log(`[Session] Restored PIN from local cache: ${pinStr}`);
+      console.log(`[Session] Restored PIN from local cache: ${pinStr} (${realPageCount} pages)`);
       return room;
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // 3. Check persistent object storage (survives Render restart / redeploy)
@@ -242,17 +293,28 @@ async function getOrRestoreRoom(pin) {
     try {
       const head = await storage.headFile(finalFilename);
       if (head.exists) {
+        // Download to local cache so we can read the real page count
+        let realPageCount = 1;
+        try {
+          const downloaded = await storage.downloadFile(finalFilename, localPath);
+          if (downloaded && fs.existsSync(localPath)) {
+            realPageCount = await getPdfPageCount(localPath);
+            console.log(`[PDF] Restored from S3 — actual page count: ${realPageCount}`);
+          }
+        } catch (dlErr) {
+          console.warn(`[PDF] Could not download from S3 to count pages for PIN ${pinStr}:`, dlErr.message);
+        }
         room = {
           pin: pinStr,
           filename: finalFilename,
           pdfUrl: `/uploads/${finalFilename}`,
           currentPage: 1,
-          totalPages: 1,
+          totalPages: realPageCount,
           createdAt: head.lastModified ? head.lastModified.getTime() : Date.now(),
           hasPhoneConnected: false
         };
         rooms.set(pinStr, room);
-        console.log(`[Session] Restored PIN from persistent S3 storage: ${pinStr}`);
+        console.log(`[Session] Restored PIN from persistent S3 storage: ${pinStr} (${realPageCount} pages)`);
         return room;
       }
     } catch (err) {
@@ -271,12 +333,17 @@ async function scanAndRestoreExistingRooms() {
       const remoteList = await storage.listPresentations();
       for (const item of remoteList) {
         if (!rooms.has(item.pin)) {
+          const localPath = path.join(UPLOAD_DIR, item.filename);
+          let realPageCount = 1;
+          if (fs.existsSync(localPath)) {
+            try { realPageCount = await getPdfPageCount(localPath); } catch (_) {}
+          }
           rooms.set(item.pin, {
             pin: item.pin,
             filename: item.filename,
             pdfUrl: `/uploads/${item.filename}`,
             currentPage: 1,
-            totalPages: 1,
+            totalPages: realPageCount,
             createdAt: item.lastModified ? item.lastModified.getTime() : Date.now(),
             hasPhoneConnected: false
           });
@@ -290,7 +357,7 @@ async function scanAndRestoreExistingRooms() {
     }
   }
 
-  // 2. Scan local disk cache
+  // 2. Scan local disk cache — read REAL page count from each PDF
   try {
     const files = await fsp.readdir(UPLOAD_DIR);
     const pdfFiles = files.filter(f => /^(\d{4})\.pdf$/.test(f));
@@ -300,19 +367,21 @@ async function scanAndRestoreExistingRooms() {
         const filePath = path.join(UPLOAD_DIR, f);
         try {
           const stats = await fsp.stat(filePath);
+          const realPageCount = await getPdfPageCount(filePath);
           rooms.set(pin, {
             pin,
             filename: f,
             pdfUrl: `/uploads/${f}`,
             currentPage: 1,
-            totalPages: 1,
+            totalPages: realPageCount,
             createdAt: stats.mtimeMs || Date.now(),
             hasPhoneConnected: false
           });
-        } catch (_) {}
+          console.log(`[PDF] Startup scan: PIN ${pin} -> ${realPageCount} page(s)`);
+        } catch (_) { }
       }
     }));
-  } catch (_) {}
+  } catch (_) { }
 }
 
 scanAndRestoreExistingRooms();
@@ -389,7 +458,7 @@ function convertToPDF(inputPath, outputDir) {
     const profileDir = path.join(os.tmpdir(), `lo_profile_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
     try {
       await fsp.mkdir(profileDir, { recursive: true });
-    } catch (_) {}
+    } catch (_) { }
 
     const args = [
       '--headless',
@@ -430,7 +499,7 @@ function convertToPDF(inputPath, outputDir) {
       return convertedPath;
 
     } finally {
-      fsp.rm(profileDir, { recursive: true, force: true }).catch(() => {});
+      fsp.rm(profileDir, { recursive: true, force: true }).catch(() => { });
     }
   });
 }
@@ -504,6 +573,11 @@ const handleUpload = async (req, res) => {
       silentUnlink(uploadedPath);
     }
 
+    // Read the REAL page count from the uploaded PDF before creating the session
+    const realPageCount = await getPdfPageCount(finalPath);
+    console.log(`[PDF] Uploaded file: ${finalFilename}`);
+    console.log(`[PDF] Actual PDF page count: ${realPageCount}`);
+
     // Persist to Google Drive storage asynchronously
     if (storage.isConfigured()) {
       storage.uploadFile(finalPath, finalFilename, 'application/pdf').catch(err => {
@@ -517,13 +591,14 @@ const handleUpload = async (req, res) => {
       filename: finalFilename,
       pdfUrl,
       currentPage: 1,
-      totalPages: 1,
+      totalPages: realPageCount,
       createdAt: Date.now(),
       hasPhoneConnected: false
     });
 
-    console.log(`[Session] Created PIN: ${pin}`);
-    return res.json({ ok: true, pin, pdfUrl });
+    console.log(`[PDF] Pages stored in session: ${realPageCount}`);
+    console.log(`[Session] Created PIN: ${pin} (${realPageCount} pages)`);
+    return res.json({ ok: true, pin, pdfUrl, totalPages: realPageCount });
 
   } catch (err) {
     console.error('[Upload Error]', err);
@@ -821,14 +896,16 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Board reports total pages loaded
+  // Board reports total pages loaded (from pdf.numPages in PDF.js)
   socket.on('pdf-loaded', async ({ pin, totalPages }) => {
     if (!pin) return;
     const pinStr = String(pin).trim();
     const room = await getOrRestoreRoom(pinStr);
     if (room) {
+      console.log(`[PDF] Board reported page count for PIN ${pinStr}: ${totalPages}`);
       room.totalPages = totalPages;
       io.to(pinStr).emit('total-pages', { totalPages, currentPage: room.currentPage });
+      console.log(`[PDF] Broadcast total-pages to room ${pinStr}: ${totalPages}`);
     }
   });
 

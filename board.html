@@ -605,13 +605,18 @@
 
     async function loadPdf(url) {
       try {
+        console.log(`[PDF] Loading PDF from: ${url}`);
         const loadingTask = pdfjsLib.getDocument(url);
         pdfDoc = await loadingTask.promise;
         totalPagesCount = pdfDoc.numPages;
+        console.log(`[PDF] PDF loaded successfully`);
+        console.log(`[PDF] Actual PDF page count (pdf.numPages): ${totalPagesCount}`);
+        console.log(`[PDF] Board page count: ${totalPagesCount}`);
         pageCount.textContent = totalPagesCount;
         if (navTotalSlides) navTotalSlides.textContent = totalPagesCount;
 
         if (socket && activePin) {
+          console.log(`[PDF] Emitting pdf-loaded: pin=${activePin}, totalPages=${totalPagesCount}`);
           socket.emit('pdf-loaded', { pin: activePin, totalPages: totalPagesCount });
         }
 
