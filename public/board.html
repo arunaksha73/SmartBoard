@@ -714,7 +714,7 @@
           displayPin.textContent = pin;
           pinOverlay.style.display = 'none';
           initBoardSocket(pin);
-          loadPdf(`${SERVER_URL}${data.pdfUrl}`);
+          loadPdf(`${SERVER_URL}${data.pdfUrl}`, data.currentPage || 1);
         } else {
           throw new Error(data.error || 'Invalid session response.');
         }
@@ -734,9 +734,41 @@
         socket.emit('join-room', { pin, role: 'board' });
       });
 
+      socket.on('room-status', (data) => {
+        if (data && data.ok) {
+          if (data.totalPages !== undefined) {
+            totalPagesCount = data.totalPages;
+            pageCount.textContent = totalPagesCount;
+            if (navTotalSlides) navTotalSlides.textContent = totalPagesCount;
+          }
+          if (data.currentPage !== undefined) {
+            queueRenderPage(data.currentPage);
+          }
+        }
+      });
+
       socket.on('slide-command', (data) => {
-        if (data && data.page !== undefined) {
-          queueRenderPage(data.page);
+        if (data) {
+          const targetPage = data.page !== undefined ? data.page : data.currentPage;
+          if (data.totalPages !== undefined) {
+            totalPagesCount = data.totalPages;
+            pageCount.textContent = totalPagesCount;
+            if (navTotalSlides) navTotalSlides.textContent = totalPagesCount;
+          }
+          if (targetPage !== undefined) {
+            queueRenderPage(targetPage);
+          }
+        }
+      });
+
+      socket.on('total-pages', (data) => {
+        if (data && data.totalPages) {
+          totalPagesCount = data.totalPages;
+          pageCount.textContent = totalPagesCount;
+          if (navTotalSlides) navTotalSlides.textContent = totalPagesCount;
+        }
+        if (data && data.currentPage !== undefined) {
+          queueRenderPage(data.currentPage);
         }
       });
 
@@ -780,24 +812,27 @@
       });
     }
 
-    async function loadPdf(url) {
+    async function loadPdf(url, targetPage = 1) {
       try {
         console.log(`[PDF] Loading PDF from: ${url}`);
         const loadingTask = pdfjsLib.getDocument(url);
         pdfDoc = await loadingTask.promise;
         totalPagesCount = pdfDoc.numPages;
-        console.log(`[PDF] PDF loaded successfully`);
+        console.log(`[PDF] Loaded: ${totalPagesCount} pages`);
         console.log(`[PDF] Actual PDF page count (pdf.numPages): ${totalPagesCount}`);
         console.log(`[PDF] Board page count: ${totalPagesCount}`);
         pageCount.textContent = totalPagesCount;
         if (navTotalSlides) navTotalSlides.textContent = totalPagesCount;
 
+        const startPage = Math.max(1, Math.min(totalPagesCount, targetPage || currentPageNum || 1));
+        currentPageNum = startPage;
+
         if (socket && activePin) {
-          console.log(`[PDF] Emitting pdf-loaded: pin=${activePin}, totalPages=${totalPagesCount}`);
-          socket.emit('pdf-loaded', { pin: activePin, totalPages: totalPagesCount });
+          console.log(`[PDF] Emitting pdf-loaded: pin=${activePin}, totalPages=${totalPagesCount}, currentPage=${startPage}`);
+          socket.emit('pdf-loaded', { pin: activePin, totalPages: totalPagesCount, currentPage: startPage });
         }
 
-        renderPage(1);
+        renderPage(startPage);
       } catch (err) {
         console.error('PDF Loading Error:', err);
         showError('Could not render presentation PDF.');
@@ -861,16 +896,18 @@
     }
 
     boardBtnNext.addEventListener('click', () => {
-      if (currentPageNum < totalPagesCount) {
+      if (socket && activePin) {
+        socket.emit('slide-command', { pin: activePin, action: 'NEXT' });
+      } else if (currentPageNum < totalPagesCount) {
         queueRenderPage(currentPageNum + 1);
-        if (socket && activePin) socket.emit('slide-command', { pin: activePin, action: 'NEXT' });
       }
     });
 
     boardBtnPrev.addEventListener('click', () => {
-      if (currentPageNum > 1) {
+      if (socket && activePin) {
+        socket.emit('slide-command', { pin: activePin, action: 'PREV' });
+      } else if (currentPageNum > 1) {
         queueRenderPage(currentPageNum - 1);
-        if (socket && activePin) socket.emit('slide-command', { pin: activePin, action: 'PREV' });
       }
     });
 

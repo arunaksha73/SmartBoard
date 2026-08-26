@@ -1115,7 +1115,7 @@
         if (data && data.ok) {
           if (data.currentPage !== undefined) currentSlide = data.currentPage;
           if (data.totalPages !== undefined) totalSlides = data.totalPages;
-          console.log(`[PDF] Remote page count from room-status: ${totalSlides}`);
+          console.log(`[ROOM] PIN ${currentPin} totalPages=${totalSlides} currentPage=${currentSlide}`);
           updateSlideInfo();
           if (currentPin) saveSession(currentPin, currentSlide, totalSlides);
         } else if (data && data.error && currentPin) {
@@ -1125,18 +1125,29 @@
       });
 
       socket.on('slide-command', (data) => {
-        if (data && data.page !== undefined) {
-          currentSlide = data.page;
-          if (data.totalPages) totalSlides = data.totalPages;
+        if (data) {
+          const targetPage = data.page !== undefined ? data.page : data.currentPage;
+          if (targetPage !== undefined) {
+            currentSlide = targetPage;
+          }
+          if (data.totalPages !== undefined) {
+            totalSlides = data.totalPages;
+          }
+          console.log(`[SLIDE] PIN ${currentPin} currentPage=${currentSlide} (total: ${totalSlides})`);
           updateSlideInfo();
           if (currentPin) saveSession(currentPin, currentSlide, totalSlides);
         }
       });
 
       socket.on('total-pages', (data) => {
-        if (data && data.totalPages) {
-          totalSlides = data.totalPages;
-          console.log(`[PDF] Remote page count updated via total-pages: ${totalSlides}`);
+        if (data) {
+          if (data.totalPages !== undefined) {
+            totalSlides = data.totalPages;
+          }
+          if (data.currentPage !== undefined) {
+            currentSlide = data.currentPage;
+          }
+          console.log(`[PDF] Loaded: ${totalSlides} pages (currentPage: ${currentSlide})`);
           updateSlideInfo();
           if (currentPin) saveSession(currentPin, currentSlide, totalSlides);
         }
@@ -1205,7 +1216,7 @@
           await new Promise(r => setTimeout(r, 400));
           progressFill.style.width = '100%';
           setStatus('Ready!');
-          initRemoteScreen(data.pin);
+          initRemoteScreen(data.pin, 1, data.totalPages || 1);
         } else {
           throw new Error(data.error || 'Upload failed');
         }

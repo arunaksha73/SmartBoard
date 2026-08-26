@@ -801,6 +801,8 @@ io.on('connection', (socket) => {
         }
       }
 
+      console.log(`[ROOM] PIN ${pinStr} totalPages=${room.totalPages} currentPage=${room.currentPage}`);
+
       socket.emit('room-status', {
         ok: true,
         pin: pinStr,
@@ -826,6 +828,7 @@ io.on('connection', (socket) => {
         console.log(`[Session] Phone connected PIN: ${pinStr}`);
         room.hasPhoneConnected = true;
       }
+      console.log(`[ROOM] PIN ${pinStr} totalPages=${room.totalPages} currentPage=${room.currentPage}`);
     }
     socket.emit('phone-joined', {
       ok: !!room,
@@ -844,6 +847,7 @@ io.on('connection', (socket) => {
     }
     socket.join(pinStr);
     console.log(`[Session] Board connected PIN: ${pinStr}`);
+    console.log(`[ROOM] PIN ${pinStr} totalPages=${room.totalPages} currentPage=${room.currentPage}`);
     socket.emit('board-joined', {
       ok: true,
       pdfUrl: room.pdfUrl,
@@ -858,16 +862,25 @@ io.on('connection', (socket) => {
     const pinStr = String(pin).trim();
     const room = await getOrRestoreRoom(pinStr);
     if (room) {
-      const maxPage = room.totalPages || 999;
-      if (action === 'NEXT') room.currentPage = Math.min(maxPage, room.currentPage + 1);
-      else if (action === 'PREV') room.currentPage = Math.max(1, room.currentPage - 1);
-      else if (action === 'GOTO' && page) room.currentPage = Math.max(1, Math.min(maxPage, page));
+      const maxPage = Math.max(1, room.totalPages || 1);
+      if (action === 'NEXT') {
+        room.currentPage = Math.min(maxPage, (room.currentPage || 1) + 1);
+      } else if (action === 'PREV') {
+        room.currentPage = Math.max(1, (room.currentPage || 1) - 1);
+      } else if (action === 'GOTO' && page !== undefined) {
+        const parsed = parseInt(page, 10);
+        if (!isNaN(parsed)) {
+          room.currentPage = Math.max(1, Math.min(maxPage, parsed));
+        }
+      }
 
-      console.log(`[Session] Slide changed PIN: ${pinStr} → page ${room.currentPage}`);
+      console.log(`[SLIDE] PIN ${pinStr} currentPage=${room.currentPage}`);
+      console.log(`[SLIDE] Broadcasting page ${room.currentPage} to room ${pinStr}`);
 
       io.to(pinStr).emit('slide-command', {
         action,
         page: room.currentPage,
+        currentPage: room.currentPage,
         totalPages: room.totalPages
       });
     } else {
@@ -881,31 +894,63 @@ io.on('connection', (socket) => {
     const pinStr = String(pin).trim();
     const room = await getOrRestoreRoom(pinStr);
     if (room) {
-      if (action === 'NEXT') room.currentPage++;
-      else if (action === 'PREV') room.currentPage = Math.max(1, room.currentPage - 1);
-      else if (action === 'GOTO' && page !== undefined) room.currentPage = page + 1;
+      const maxPage = Math.max(1, room.totalPages || 1);
+      if (action === 'NEXT') {
+        room.currentPage = Math.min(maxPage, (room.currentPage || 1) + 1);
+      } else if (action === 'PREV') {
+        room.currentPage = Math.max(1, (room.currentPage || 1) - 1);
+      } else if (action === 'GOTO' && page !== undefined) {
+        const parsed = parseInt(page, 10);
+        if (!isNaN(parsed)) {
+          room.currentPage = Math.max(1, Math.min(maxPage, parsed + 1));
+        }
+      }
 
-      console.log(`[Session] Slide changed PIN: ${pinStr} → page ${room.currentPage}`);
+      console.log(`[SLIDE] PIN ${pinStr} currentPage=${room.currentPage}`);
+      console.log(`[SLIDE] Broadcasting page ${room.currentPage} to room ${pinStr}`);
 
       io.to(pinStr).emit('slide-command', {
         action,
         page: room.currentPage,
+        currentPage: room.currentPage,
         totalPages: room.totalPages
       });
-      io.to(pinStr).emit('go-to-page', { page: room.currentPage - 1, totalPages: room.totalPages });
+      io.to(pinStr).emit('go-to-page', { page: room.currentPage - 1, currentPage: room.currentPage, totalPages: room.totalPages });
     }
   });
 
-  // Board reports total pages loaded (from pdf.numPages in PDF.js)
-  socket.on('pdf-loaded', async ({ pin, totalPages }) => {
+  // Board reports total pages loaded (authoritative pdfDoc.numPages in PDF.js)
+  socket.on('pdf-loaded', async ({ pin, totalPages, currentPage }) => {
     if (!pin) return;
     const pinStr = String(pin).trim();
     const room = await getOrRestoreRoom(pinStr);
     if (room) {
-      console.log(`[PDF] Board reported page count for PIN ${pinStr}: ${totalPages}`);
-      room.totalPages = totalPages;
-      io.to(pinStr).emit('total-pages', { totalPages, currentPage: room.currentPage });
-      console.log(`[PDF] Broadcast total-pages to room ${pinStr}: ${totalPages}`);
+      const parsedTotal = parseInt(totalPages, 10);
+      if (!isNaN(parsedTotal) && parsedTotal > 0) {
+        room.totalPages = parsedTotal;
+      }
+      if (currentPage !== undefined) {
+        const parsedCurrent = parseInt(currentPage, 10);
+        if (!isNaN(parsedCurrent) && parsedCurrent >= 1) {
+          room.currentPage = Math.min(room.totalPages, Math.max(1, parsedCurrent));
+        }
+      }
+
+      console.log(`[PDF] Loaded: ${room.totalPages} pages`);
+      console.log(`[ROOM] PIN ${pinStr} totalPages=${room.totalPages} currentPage=${room.currentPage}`);
+      console.log(`[SLIDE] Broadcasting page ${room.currentPage} to room ${pinStr}`);
+
+      io.to(pinStr).emit('total-pages', {
+        totalPages: room.totalPages,
+        currentPage: room.currentPage
+      });
+
+      io.to(pinStr).emit('slide-command', {
+        action: 'GOTO',
+        page: room.currentPage,
+        currentPage: room.currentPage,
+        totalPages: room.totalPages
+      });
     }
   });
 
